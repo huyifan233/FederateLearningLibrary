@@ -3,7 +3,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import tianshu_fl.generator.job_generator
-
+import tianshu_fl.core.strategy as strategy
+import tianshu_fl.generator.job_generator as job_generator
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -34,16 +35,19 @@ class Net(nn.Module):
         x = self.softmax(x)
         return x
 
-def startup():
+def generator_job(work_mode):
 
-    job = Job()
-
-    pass
-
+    job = job_generator.Job()
+    job_id = job.generate_job_id()
+    job.set_job_id(job_id)
+    if work_mode == strategy.WorkModeStrategy.WORKMODE_STANDALONE:
+        job.set_server_host("localhost:8080")
+    else:
+        job.set_server_host("");
 
 
 if __name__ == "__main__":
-    startup()
-
+    #startup(strategy.WorkModeStrategy.WORKMODE_STANDALONE)
+    pass
 
 
