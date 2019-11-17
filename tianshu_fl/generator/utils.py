@@ -1,5 +1,6 @@
 import threading
 import datetime
+import pickle
 
 class JobIdCount(object):
 
@@ -29,5 +30,8 @@ class JobUtils(Utils):
     def generate_job_id(self):
         return '{}{}'.format(datetime.datetime.now().strftime("%Y%m%d%H%M%S%f"), jobCount.incr())
 
+    @staticmethod
+    def serialize(self, job):
+        return pickle.dumps(job)
 
 

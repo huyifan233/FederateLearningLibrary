@@ -1,11 +1,13 @@
 
 import threading
-
+from tianshu_fl.entity.runtime_config import RuntimeConfig
 
 class TianshuFlServer(threading.Thread):
 
     def __init__(self):
        pass
+
+
 
 class TianshuFlStandaloneServer(TianshuFlServer):
     def __init__(self):
@@ -14,7 +16,12 @@ class TianshuFlStandaloneServer(TianshuFlServer):
 
 
     def run(self):
-        pass
+        queue = RuntimeConfig.WAIT_JOB_QUEUE
+        while True:
+            if not queue.empty():
+                pass
+
+
 
 
 class TianshuFlClusterServer(TianshuFlServer):
