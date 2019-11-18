@@ -14,7 +14,7 @@ def start_trainer(work_mode):
     #
     # else:
     #     pass
-    Trainer(work_mode).start()
+    Trainer(work_mode, 3).start()
 
 
 if __name__ == "__main__":
