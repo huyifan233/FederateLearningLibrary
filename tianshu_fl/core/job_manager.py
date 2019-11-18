@@ -23,13 +23,14 @@ class JobManager(object):
     def prepare_job(self, job):
         with lock:
             RuntimeConfig.WAIT_JOB_LIST.remove(job)
-            RuntimeConfig.PENDING_JOB_QUEUE.put(job)
+            RuntimeConfig.PENDING_JOB_LIST.append(job)
 
-    def exec_job(self):
+    def exec_job(self, job):
         with lock:
-            job = RuntimeConfig.PENDING_JOB_QUEUE.get()
-            RuntimeConfig.EXEC_JOB_QUEUE.put(job)
+            exec_job = RuntimeConfig.PENDING_JOB_LIST.remove(job)
+            RuntimeConfig.EXEC_JOB_QUEUE.put(exec_job)
 
     def complete(self):
         with lock:
             RuntimeConfig.EXEC_JOB_QUEUE.get()
+
