@@ -1,7 +1,9 @@
-import queue
-from tianshu_fl.entity import runtime_config
+import torch
 import threading
 import pickle
+import os
+from tianshu_fl.entity import runtime_config
+
 
 lock = threading.RLock()
 
@@ -10,12 +12,14 @@ class JobManager(object):
     def __init__(self, job_path):
        self.job_path = job_path
 
-    def submit_job(self, job):
+    def submit_job(self, job, model, model_path):
 
         with lock:
-            #RuntimeConfig.WAIT_JOB_LIST.append(job)
-            #runtime_config.add_waiting_job(job)
-            #print(len(runtime_config.get_waiting_job()))
+            # create model dir of this job
+            job_model_dir = model_path + "\\"+"models_{}".format(job.get_job_id())
+            if not os.path.exists(job_model_dir):
+                os.makedirs(job_model_dir)
+            torch.save(model, job_model_dir+"\\"+"{}.pt".format(job.get_job_id()))
             f = open(self.job_path+"\\"+"job_{}".format(job.get_job_id()), "wb")
             pickle.dump(job, f)
             print("job {} added successfully".format(job.get_job_id()))

@@ -7,39 +7,51 @@ from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.entity import runtime_config
 from tianshu_fl.core.strategy import RunTimeStrategy
 
+
+
 JOB_PATH = "res\\jobs"
+LOCAL_MODEL_BASE_PATH = "res\\models\\"
 
 class Trainer(object):
-    def __init__(self, work_mode, data, concurrent_num=3):
+    def __init__(self, work_mode, data, client_id, concurrent_num=3):
         self.work_mode = work_mode
         self.data = data
+        self.client_id = client_id
         self.concurrent_num = concurrent_num
         self.trainer_executor_pool = ThreadPoolExecutor(self.concurrent_num)
         self.job_path = os.path.abspath(".")+"\\"+JOB_PATH
 
     def start(self):
         if self.work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
+
+            # start train
             while True:
-                job_file_list = Trainer.list_all_jobs(self.job_path)
-                if job_file_list is not None:
-                    print("len: {}".format(len(job_file_list)))
-                    for job_file in job_file_list:
-                        job = pickle.load(job_file)
-                        self.trainer_executor_pool.submit(Trainer.train, self.data, job)
+                job_list = Trainer.list_all_jobs(self.job_path)
+                if job_list is not None:
+                    for job in job_list:
+                        if job not in runtime_config.EXEC_JOB_LIST:
+                            job_model = Trainer.load_job_model(job.get_job_id())
+                            Trainer.create_job_models_dir(self.client_id, job.get_job_id())
+                            future = self.trainer_executor_pool.submit(Trainer.train, self.data, job, job_model)
+                            runtime_config.EXEC_JOB_LIST.append(job)
+                            print("job_{} is start training".format(job.get_job_id()))
+                            print(future.result())
                     #TODO: need to send model to server and get terminate signal
                 time.sleep(5)
 
     @staticmethod
-    def train(self, data, job):
+    def train(data, job, train_model):
         train_strategy = job.get_train_strategy()
-        dataloader = torch.utils.data.Dataloader(data, batch_size=train_strategy.get_batch_size(), shuffle=True, num_workers=1,
+
+        dataloader = torch.utils.data.DataLoader(data, batch_size=train_strategy.get_batch_size(), shuffle=True, num_workers=1,
                                            pin_memory=True)
-        train_model = job.get_train_model()
+
         optimizer = Trainer.parse_optimizer(train_strategy.get_optimizer(), train_model, train_strategy.get_learning_rate())
-        for idx, (data, target) in enumerate(dataloader):
-            data, target = data.cuda(), target.cuda()
-            pred = train_model(data)
-            loss_function = Trainer.parse_loss_function(train_strategy.get_loss_function(), pred, target)
+        for idx, (batch_data, batch_target) in enumerate(dataloader):
+            batch_data, batch_target = batch_data.cuda(), batch_target.cuda()
+            train_model = train_model.cuda()
+            pred = train_model(batch_data)
+            loss_function = Trainer.parse_loss_function(train_strategy.get_loss_function(), pred, batch_target)
             optimizer.zero_grad()
             loss_function.backward()
             optimizer.step()
@@ -62,8 +74,24 @@ class Trainer(object):
 
     @staticmethod
     def list_all_jobs(job_path):
-        file_list = []
+        job_list = []
         for file in os.listdir(job_path):
+            # print("job file: ", job_path+"\\"+file)
             f = open(job_path+"\\"+file, "rb")
-            file_list.append(f)
-        return file_list
+            job = pickle.load(f)
+            job_list.append(job)
+        return job_list
+
+    @staticmethod
+    def create_job_models_dir(client_id, job_id):
+        # create local model dir
+        local_model_dir = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH +"models_{}\\models_{}".format(job_id, client_id)
+        if not os.path.exists(local_model_dir):
+            os.makedirs(local_model_dir)
+
+    @staticmethod
+    def load_job_model(job_id):
+        job_model_path = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH + "models_{}\\{}.pt".format(job_id, job_id)
+        return torch.load(job_model_path)
+
+

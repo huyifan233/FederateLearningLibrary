@@ -10,7 +10,7 @@ from tianshu_fl.core.job_manager import JobManager
 from tianshu_fl.generator.utils import JobUtils
 
 JOB_PATH = os.path.abspath(".")+"\\res\\jobs"
-
+MODEL_PATH = os.path.abspath(".")+"\\res\\models"
 
 class Net(nn.Module):
     def __init__(self):
@@ -31,27 +31,27 @@ class Net(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
-    def p_for_KL(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = x.view(-1, 4*4*50)
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        x = self.softmax(x)
-        return x
+    # def p_for_KL(self, x):
+    #     x = F.relu(self.conv1(x))
+    #     x = F.max_pool2d(x, 2, 2)
+    #     x = F.relu(self.conv2(x))
+    #     x = F.max_pool2d(x, 2, 2)
+    #     x = x.view(-1, 4*4*50)
+    #     x = F.relu(self.fc1(x))
+    #     x = self.fc2(x)
+    #     x = self.softmax(x)
+    #     return x
 
-def generator_job(work_mode, train_code_strategy, train_model):
+def generator_job(work_mode, train_code_strategy):
 
     job = Job()
     job.set_job_id(JobUtils.generate_job_id())
     if work_mode == strategy.WorkModeStrategy.WORKMODE_STANDALONE:
         job.set_server_host("localhost:8080")
+
     else:
         job.set_server_host("")
     job.set_train_strategy(train_code_strategy)
-    job.set_train_model(train_model)
     return job
 
 
@@ -69,7 +69,9 @@ if __name__ == "__main__":
     #startup(strategy.WorkModeStrategy.WORKMODE_STANDALONE)
     train_code_strategy = generate_train_strategy(strategy.RunTimeStrategy.OPTIM_SGD, strategy.RunTimeStrategy.NLL_LOSS,
                                                   lr=0.01, epoch=100, batch_size=32)
-    model = Net()
-    job = generator_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy, model)
 
-    JobManager(JOB_PATH).submit_job(job)
+    model = Net()
+    job = generator_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy)
+
+
+    JobManager(JOB_PATH).submit_job(job, model, MODEL_PATH)

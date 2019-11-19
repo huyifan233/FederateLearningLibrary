@@ -89,7 +89,7 @@ class TrainStrategyFatorcy(StrategyFactory):
         self.batch_size = batch_size
 
     def get_batch_size(self):
-        return self.get_batch_size()
+        return self.batch_size
 
     def set_epoch(self, epoch):
         self.epoch = epoch
