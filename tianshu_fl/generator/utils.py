@@ -27,11 +27,11 @@ class JobUtils(Utils):
         super(JobUtils, self).__init__()
 
     @staticmethod
-    def generate_job_id(self):
-        return '{}{}'.format(datetime.datetime.now().strftime("%Y%m%d%H%M%S%f"), jobCount.incr())
+    def generate_job_id():
+        return '{}{}'.format(datetime.datetime.now().strftime("%Y%m%d%H%M%S%f"), jobCount.incr(1))
 
     @staticmethod
-    def serialize(self, job):
+    def serialize(job):
         return pickle.dumps(job)
 
 

@@ -1,36 +1,37 @@
 import queue
-from tianshu_fl.entity.runtime_config import RuntimeConfig
+from tianshu_fl.entity import runtime_config
 import threading
-
+import pickle
 
 lock = threading.RLock()
 
 class JobManager(object):
 
-    def __init__(self):
-        if RuntimeConfig.WAIT_JOB_LIST is None:
-            RuntimeConfig.WAIT_JOB_LIST = []
-        if RuntimeConfig.EXEC_JOB_QUEUE is None:
-            RuntimeConfig.EXEC_JOB_QUEUE = queue.Queue()
-        if RuntimeConfig.PENDING_JOB_QUEUE is None:
-            RuntimeConfig.PENDING_JOB_QUEUE = queue.Queue()
+    def __init__(self, job_path):
+       self.job_path = job_path
 
     def submit_job(self, job):
 
         with lock:
-            RuntimeConfig.WAIT_JOB_LIST.append(job)
+            #RuntimeConfig.WAIT_JOB_LIST.append(job)
+            #runtime_config.add_waiting_job(job)
+            #print(len(runtime_config.get_waiting_job()))
+            f = open(self.job_path+"\\"+"job_{}".format(job.get_job_id()), "wb")
+            pickle.dump(job, f)
+            print("job {} added successfully".format(job.get_job_id()))
+
 
     def prepare_job(self, job):
         with lock:
-            RuntimeConfig.WAIT_JOB_LIST.remove(job)
-            RuntimeConfig.PENDING_JOB_LIST.append(job)
+            runtime_config.remove_waiting_job(job)
+            runtime_config.add_pending_job(job)
 
     def exec_job(self, job):
         with lock:
-            exec_job = RuntimeConfig.PENDING_JOB_LIST.remove(job)
-            RuntimeConfig.EXEC_JOB_QUEUE.put(exec_job)
+            exec_job = runtime_config.remove_pending_job(job)
+            runtime_config.add_exec_job(job)
 
     def complete(self):
         with lock:
-            RuntimeConfig.EXEC_JOB_QUEUE.get()
+            runtime_config.get_exec_job()
 

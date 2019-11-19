@@ -1,25 +1,24 @@
+import torch
+import os
+from torchvision import datasets, transforms
 from tianshu_fl.core.strategy import WorkModeStrategy
-from tianshu_fl.entity.runtime_config import RuntimeConfig
 from tianshu_fl.core.trainer import Trainer
+from tianshu_fl.core.job_detector import JobDetector
 
 
-MODEL_PATH = "../mnist_res"
 
-def start_trainer(work_mode):
-    # if work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
-    #     pending_job_list = RuntimeConfig.PENDING_JOB_LIST
-    #     trainer = Trainer()
-    #     for pending_job in pending_job_list:
-    #         trainer.train(pending_job)
-    #
-    # else:
-    #     pass
-    Trainer(work_mode, 3).start()
+def start_trainer(work_mode, data):
 
+    Trainer(work_mode, data, 3).start()
+    #print(os.path.abspath("."))
 
 if __name__ == "__main__":
+    mnist_data = datasets.MNIST("./mnist_data", download=True, train=True, transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.13066062,), (0.30810776,))
+    ]))
 
-    start_trainer(WorkModeStrategy.WORKMODE_STANDALONE)
+    start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, mnist_data)
 
 
 

@@ -66,8 +66,14 @@ class TrainStrategyFatorcy(StrategyFactory):
         else:
             raise exceptions.TianshuFLException("optimizer strategy not found")
 
+    def get_optimizer(self):
+        return self.optimizer
+
     def set_learning_rate(self, learning_rate):
         self.learning_rate = learning_rate
+
+    def get_learning_rate(self):
+        return self.learning_rate
 
     def set_loss_function(self, loss_function):
         loss_functions = self.get_loss_functions()
@@ -75,11 +81,21 @@ class TrainStrategyFatorcy(StrategyFactory):
             self.loss_function = loss_function
         else:
             raise exceptions.TianshuFLException("loss strategy not found")
+
+    def get_loss_function(self):
+        return self.loss_function
+
     def set_batch_size(self, batch_size):
         self.batch_size = batch_size
 
+    def get_batch_size(self):
+        return self.get_batch_size()
+
     def set_epoch(self, epoch):
         self.epoch = epoch
+
+    def get_epoch(self):
+        return self.epoch
 
 
 class TestStrategyFactory(StrategyFactory):

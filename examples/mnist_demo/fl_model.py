@@ -1,6 +1,6 @@
 import flask
 import torch
-import pickle
+import pickle, os
 from torch import nn
 import torch.nn.functional as F
 from tianshu_fl.generator.job_generator import Job
@@ -8,6 +8,9 @@ import tianshu_fl.core.strategy as strategy
 from tianshu_fl.core.job_manager import JobManager
 
 from tianshu_fl.generator.utils import JobUtils
+
+JOB_PATH = os.path.abspath(".")+"\\res\\jobs"
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -69,4 +72,4 @@ if __name__ == "__main__":
     model = Net()
     job = generator_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy, model)
 
-    JobManager().submit_job(job)
+    JobManager(JOB_PATH).submit_job(job)
