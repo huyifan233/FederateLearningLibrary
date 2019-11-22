@@ -1,6 +1,6 @@
 import flask
 import torch
-import pickle, os
+import pickle, os, inspect
 from torch import nn
 import torch.nn.functional as F
 from tianshu_fl.generator.job_generator import Job
@@ -42,16 +42,17 @@ class Net(nn.Module):
     #     x = self.softmax(x)
     #     return x
 
-def generator_job(work_mode, train_code_strategy):
+def generator_job(work_mode, train_code_strategy, model, iter):
 
     job = Job()
     job.set_job_id(JobUtils.generate_job_id())
     if work_mode == strategy.WorkModeStrategy.WORKMODE_STANDALONE:
         job.set_server_host("localhost:8080")
-
     else:
         job.set_server_host("")
     job.set_train_strategy(train_code_strategy)
+    job.set_train_model(inspect.getsource(model))
+    job.set_iterations(iter)
     return job
 
 
@@ -71,7 +72,7 @@ if __name__ == "__main__":
                                                   lr=0.01, epoch=100, batch_size=32)
 
     model = Net()
-    job = generator_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy)
+    job = generator_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy, Net, 3)
 
 
     JobManager(JOB_PATH).submit_job(job, model, MODEL_PATH)

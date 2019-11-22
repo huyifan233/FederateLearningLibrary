@@ -11,7 +11,7 @@ from tianshu_fl.core.strategy import RunTimeStrategy
 
 JOB_PATH = "res\\jobs"
 LOCAL_MODEL_BASE_PATH = "res\\models\\"
-AGGREGATE_PATH = "tmp_pars"
+AGGREGATE_PATH = "tmp_aggregate_pars"
 
 
 class Trainer(object):
@@ -23,14 +23,27 @@ class Trainer(object):
         self.trainer_executor_pool = ThreadPoolExecutor(self.concurrent_num)
         self.job_path = os.path.abspath(".")+"\\"+JOB_PATH
         self.fed_step = 0
+        self.job_iter_dict = {}
+        self.is_finish = True
+
 
     def start(self):
         if self.work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
 
             # start train
             while True:
-                job_list = Trainer.list_all_jobs(self.job_path)
+                job_list = Trainer.list_all_jobs(self.job_path, self.job_iter_dict)
                 for job in job_list:
+                    if self.job_iter_dict.get(job.get_job_id()) is None or self.job_iter_dict.get(job.get_job_id()) != job.get_iterations():
+                        self.is_finish = False
+                        break
+                if self.is_finish:
+                    Trainer.exec_finish_job(job_list)
+                    break
+                for job in job_list:
+                    if self.job_iter_dict.get(job.get_job_id()) is not None \
+                            and self.job_iter_dict.get(job.get_job_id()) >= job.get_iterations():
+                        continue
                     aggregat_file, fed_step = Trainer.find_latest_aggregate_model_pars(job.get_job_id())
                     if aggregat_file is not None and self.fed_step != fed_step:
                         if job.get_job_id() in runtime_config.EXEC_JOB_LIST:
@@ -40,6 +53,7 @@ class Trainer(object):
                     if job.get_job_id() not in runtime_config.EXEC_JOB_LIST:
                         job_model = Trainer.load_job_model(job.get_job_id())
                         if aggregat_file is not None:
+                            print("load {} parameters".format(aggregat_file))
                             job_model.load_state_dict(torch.load(aggregat_file))
                         job_models_path = Trainer.create_job_models_dir(self.client_id, job.get_job_id())
                         future = self.trainer_executor_pool.submit(Trainer.train, self.data, job, job_model,
@@ -47,6 +61,7 @@ class Trainer(object):
                         runtime_config.EXEC_JOB_LIST.append(job.get_job_id())
                         print("job_{} is start training".format(job.get_job_id()))
                         future.result()
+                        self.job_iter_dict[job.get_job_id()] += 1
 
                 time.sleep(5)
         else:
@@ -88,13 +103,15 @@ class Trainer(object):
 
 
     @staticmethod
-    def list_all_jobs(job_path):
+    def list_all_jobs(job_path, job_iter_dict):
         job_list = []
         for file in os.listdir(job_path):
             # print("job file: ", job_path+"\\"+file)
             f = open(job_path+"\\"+file, "rb")
             job = pickle.load(f)
             job_list.append(job)
+            if job_iter_dict.get(job.get_job_id()) is None:
+                job_iter_dict[job.get_job_id()] = 0
         return job_list
 
     @staticmethod
@@ -113,8 +130,14 @@ class Trainer(object):
     @staticmethod
     def find_latest_aggregate_model_pars(job_id):
         job_model_path = LOCAL_MODEL_BASE_PATH + "models_{}\\{}".format(job_id, AGGREGATE_PATH)
+        if not os.path.exists(job_model_path):
+            os.makedirs(job_model_path)
         file_list = os.listdir(job_model_path)
 
         if len(file_list) != 0:
             return job_model_path + "\\" + file_list[-1], len(file_list)
         return None, 0
+
+
+    def exec_finish_job(self, job_list):
+        pass

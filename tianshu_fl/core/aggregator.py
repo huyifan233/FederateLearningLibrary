@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.generator.job_generator import Job
 
-LOCAL_AGGREGATE_FILE = "tmp_pars\\avg_pars"
+LOCAL_AGGREGATE_FILE = "tmp_aggregate_pars\\avg_pars"
 
 class Aggregator(object):
     def __init__(self, work_mode, job_path, base_model_path, concurrent_num=3):
@@ -26,11 +26,12 @@ class Aggregator(object):
 
     def load_aggregate_model_pars(self, job_model_pars_path):
         job_model_pars = []
-        print("job_model_pars_path: ", job_model_pars_path)
+        one_model_par_files_len = 0
+        #print("job_model_pars_path: ", job_model_pars_path)
         for f in os.listdir(job_model_pars_path):
             if f.find("models_") != -1:
                 one_model_par_path = job_model_pars_path + "\\"+f
-                print("one_model_par_path: ", one_model_par_path)
+                #print("one_model_par_path: ", one_model_par_path)
                 one_model_par_files = os.listdir(one_model_par_path)
                 one_model_par_files_len = len(one_model_par_files)
                 if one_model_par_files and len(one_model_par_files) != 0:
@@ -68,7 +69,10 @@ class FedAvgAggregator(Aggregator):
                 avg_model_par[key] += job_model_pars[i][key]
             avg_model_par[key] = torch.div(avg_model_par[key], len(job_model_pars))
         if work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
-            torch.save(avg_model_par, base_model_path +"\\models_{}\\{}_{}".format(job_id, LOCAL_AGGREGATE_FILE, fed_step))
+            tmp_aggregate_path = base_model_path +"\\models_{}\\{}_{}".format(job_id, LOCAL_AGGREGATE_FILE, fed_step)
+            if not os.path.exists(tmp_aggregate_path):
+                os.makedirs(tmp_aggregate_path)
+            torch.save(avg_model_par, tmp_aggregate_path)
         else:
             pass
         print("aggregate success!!")
@@ -76,6 +80,7 @@ class FedAvgAggregator(Aggregator):
 class DistillationAggregator(Aggregator):
     def __init__(self):
         super(DistillationAggregator, self).__init__()
+
 
 
     def aggregate(self):
