@@ -37,6 +37,9 @@ class Aggregator(object):
                 if one_model_par_files and len(one_model_par_files) != 0:
                     model_par = torch.load(one_model_par_path+"\\"+os.listdir(one_model_par_path)[-1])
                     job_model_pars.append(model_par)
+                else:
+                    # wait for other clients finish training
+                    return None, 0
 
         return job_model_pars, one_model_par_files_len
 
@@ -69,8 +72,9 @@ class FedAvgAggregator(Aggregator):
                 avg_model_par[key] += job_model_pars[i][key]
             avg_model_par[key] = torch.div(avg_model_par[key], len(job_model_pars))
         if work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
+            tmp_aggregate_dir = base_model_path + "\\models_{}".format(job_id)
             tmp_aggregate_path = base_model_path +"\\models_{}\\{}_{}".format(job_id, LOCAL_AGGREGATE_FILE, fed_step)
-            if not os.path.exists(tmp_aggregate_path):
+            if not os.path.exists(tmp_aggregate_dir):
                 os.makedirs(tmp_aggregate_path)
             torch.save(avg_model_par, tmp_aggregate_path)
         else:
