@@ -38,7 +38,7 @@ class Trainer(object):
                         self.is_finish = False
                         break
                 if self.is_finish:
-                    Trainer.exec_finish_job(job_list)
+                    self._exec_finish_job(job_list)
                     break
                 for job in job_list:
                     if self.job_iter_dict.get(job.get_job_id()) is not None \
@@ -139,5 +139,8 @@ class Trainer(object):
         return None, 0
 
 
-    def exec_finish_job(self, job_list):
+    def _exec_finish_job(self, job_list):
+        #TODO：acquire result and clean resources
         pass
+
+

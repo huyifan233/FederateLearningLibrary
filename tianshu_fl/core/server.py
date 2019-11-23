@@ -4,7 +4,7 @@ import time
 import os
 from tianshu_fl.core.aggregator import FedAvgAggregator
 from tianshu_fl.core.strategy import WorkModeStrategy, FedrateStrategy
-
+from tianshu_fl.core import communicate
 
 JOB_PATH = os.path.abspath(".") + "\\res\\jobs"
 BASE_MODEL_PATH = os.path.abspath(".") + "\\res\\models"
@@ -33,12 +33,18 @@ class TianshuFlStandaloneServer(TianshuFlServer):
 
 class TianshuFlClusterServer(TianshuFlServer):
 
-    def __init__(self):
+    def __init__(self, federate_strategy, ip, port, api_version):
         super(TianshuFlClusterServer, self).__init__()
+        if federate_strategy == FedrateStrategy.FED_AVG:
+            self.aggregator = FedAvgAggregator(WorkModeStrategy.WORKMODE_STANDALONE, JOB_PATH, BASE_MODEL_PATH)
+        else:
+            pass
+        self.ip = ip
+        self.port = port
+        self.api_version = api_version
 
     def run(self):
-        pass
-
+        communicate.start_communicate_server(self.api_version, self.ip, self.port)
 
 
 

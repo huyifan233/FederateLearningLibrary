@@ -22,7 +22,9 @@ if __name__ == "__main__":
         transforms.Normalize((0.13066062,), (0.30810776,))
     ]))
 
-    start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, CLIENT_ID, mnist_data)\
+    #start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, CLIENT_ID, mnist_data)
+
+    start_trainer(WorkModeStrategy.WORKMODE_CLUSTER, CLIENT_ID, mnist_data)
 
 
 
