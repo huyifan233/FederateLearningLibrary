@@ -37,7 +37,7 @@ class JobManager(object):
             job_model_dir = model_path + "\\"+"models_{}".format(job.get_job_id())
             if not os.path.exists(job_model_dir):
                 os.makedirs(job_model_dir)
-            torch.save(model, job_model_dir+"\\"+"{}.pt".format(job.get_job_id()))
+            torch.save(model.state_dict(), job_model_dir+"\\"+"init_model_pars_{}".format(job.get_job_id()))
             f = open(self.job_path+"\\"+"job_{}".format(job.get_job_id()), "wb")
             pickle.dump(job, f)
             print("job {} added successfully".format(job.get_job_id()))

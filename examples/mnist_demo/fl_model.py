@@ -57,5 +57,4 @@ if __name__ == "__main__":
     model = Net()
     job_manager = JobManager(JOB_PATH)
     job = job_manager.generate_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy, Net, 3)
-
     job_manager.submit_job(job, model, MODEL_PATH)

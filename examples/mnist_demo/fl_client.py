@@ -6,7 +6,7 @@ from tianshu_fl.core.trainer import Trainer
 from tianshu_fl.core.job_detector import JobDetector
 from torch import nn
 import torch.nn.functional as F
-from fl_model import Net
+
 
 
 CLIENT_ID = 0
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     #start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, CLIENT_ID, mnist_data)
 
-    start_trainer(WorkModeStrategy.WORKMODE_CLUSTER, CLIENT_ID, mnist_data)
+    start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, CLIENT_ID, mnist_data)
 
 
 

@@ -30,6 +30,9 @@ class Job(object):
     def set_train_model_class_name(self, train_model_class_name):
         self.train_model_class_name = train_model_class_name
 
+    def get_train_model_class_name(self):
+        return self.train_model_class_name
+
     def get_server_host(self):
         return self.server_host
 
