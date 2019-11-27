@@ -5,7 +5,6 @@ import torch
 import time
 from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.strategy import WorkModeStrategy
-from tianshu_fl.generator.job_generator import Job
 
 LOCAL_AGGREGATE_FILE = "tmp_aggregate_pars\\avg_pars"
 

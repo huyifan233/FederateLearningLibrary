@@ -8,6 +8,7 @@ class Job(object):
         self.job_id = None
         self.train_strategy = None
         self.train_model = None
+        self.train_model_class_name = None
         self.iterations = None
         self.status = None
 
@@ -25,6 +26,9 @@ class Job(object):
 
     def set_train_model(self, train_model):
         self.train_model = train_model
+
+    def set_train_model_class_name(self, train_model_class_name):
+        self.train_model_class_name = train_model_class_name
 
     def get_server_host(self):
         return self.server_host

@@ -1,8 +1,7 @@
 import threading
 import time
 import os
-from tianshu_fl.entity import runtime_config
-from tianshu_fl.generator.utils import JobUtils
+from tianshu_fl.utils.utils import JobUtils
 from tianshu_fl.core.strategy import WorkModeStrategy
 
 

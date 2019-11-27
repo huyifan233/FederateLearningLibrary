@@ -10,6 +10,12 @@ app = Flask(__name__)
 def test_flask():
     return 'hello world'
 
+@app.route("/jobs", methods=['GET'])
+def acquire_job_list():
+    return ''
+
+
+
 
 
 
