@@ -1,7 +1,7 @@
 import torch
 import threading
 import pickle
-import os
+import os, json
 import inspect
 from tianshu_fl.entity import runtime_config
 from tianshu_fl.entity.job import Job
@@ -41,6 +41,7 @@ class JobManager(object):
             print("job {} added successfully".format(job.get_job_id()))
 
 
+
     def prepare_job(self, job):
         with lock:
             runtime_config.remove_waiting_job(job)
@@ -55,3 +56,12 @@ class JobManager(object):
         with lock:
             runtime_config.get_exec_job()
 
+    @staticmethod
+    def get_job_list(job_path):
+        job_list = []
+        for job_file in os.listdir(job_path):
+            job_file_path = job_path + "\\" + job_file
+            with open(job_file_path, "rb") as f:
+                job = pickle.load(f)
+                job_list.append(job)
+        return job_list

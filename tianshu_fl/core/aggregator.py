@@ -3,9 +3,11 @@ import os
 import pickle
 import torch
 import time
+import requests
 from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.strategy import WorkModeStrategy
-
+from tianshu_fl.core.job_manager import JobManager
+from tianshu_fl.entity.runtime_config import WAITING_BROADCAST_AGGREGATED_JOB_LIST, CONNECTED_TRAINER_LIST
 LOCAL_AGGREGATE_FILE = "tmp_aggregate_pars\\avg_pars"
 
 class Aggregator(object):
@@ -15,13 +17,13 @@ class Aggregator(object):
         self.aggregate_executor_pool = ThreadPoolExecutor(concurrent_num)
         self.work_mode = work_mode
 
-    def load_job_list(self, job_path):
-        job_list = []
-        for job_file in os.listdir(job_path):
-            f = open(job_path+"\\"+job_file, "rb")
-            job = pickle.load(f)
-            job_list.append(job)
-        return job_list
+    # def load_job_list(self, job_path):
+    #     job_list = []
+    #     for job_file in os.listdir(job_path):
+    #         f = open(job_path+"\\"+job_file, "rb")
+    #         job = pickle.load(f)
+    #         job_list.append(job)
+    #     return job_list
 
     def load_aggregate_model_pars(self, job_model_pars_path):
         job_model_pars = []
@@ -49,27 +51,28 @@ class FedAvgAggregator(Aggregator):
         super(FedAvgAggregator, self).__init__(work_mode, job_path, base_model_path)
         self.fed_step = 0
     def aggregate(self):
-        if self.work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
-            while True:
-                job_list = self.load_job_list(self.job_path)
-                for job in job_list:
-                    job_model_pars, fed_step = self.load_aggregate_model_pars(self.base_model_path + "\\models_{}".format(job.get_job_id()))
-                    if self.fed_step != fed_step:
-                        futures = self.aggregate_executor_pool.submit(self.exec, self.work_mode, job_model_pars, self.base_model_path, job.get_job_id(), fed_step)
-                        print(futures.result())
-                        self.fed_step = fed_step
-                time.sleep(5)
-        else:
-            pass
+
+        while True:
+            job_list = JobManager.get_job_list(self.job_path)
+            WAITING_BROADCAST_AGGREGATED_JOB_LIST.clear()
+            for job in job_list:
+                job_model_pars, fed_step = self.load_aggregate_model_pars(self.base_model_path + "\\models_{}".format(job.get_job_id()))
+                if self.fed_step != fed_step:
+                    futures = self.aggregate_executor_pool.submit(self._exec, job_model_pars, self.base_model_path, job.get_job_id(), fed_step)
+                    futures.result()
+                    self.fed_step = fed_step
+                    WAITING_BROADCAST_AGGREGATED_JOB_LIST.append(job.get_job_id())
+            self._broadcast(WAITING_BROADCAST_AGGREGATED_JOB_LIST, CONNECTED_TRAINER_LIST, self.base_model_path)
+            time.sleep(5)
 
 
-    def exec(self, work_mode, job_model_pars, base_model_path, job_id, fed_step):
+
+    def _exec(self, job_model_pars, base_model_path, job_id, fed_step):
         avg_model_par = job_model_pars[0]
         for key in avg_model_par.keys():
             for i in range(1, len(job_model_pars)):
                 avg_model_par[key] += job_model_pars[i][key]
             avg_model_par[key] = torch.div(avg_model_par[key], len(job_model_pars))
-        if work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
             tmp_aggregate_dir = base_model_path + "\\models_{}".format(job_id)
             tmp_aggregate_path = base_model_path +"\\models_{}\\{}_{}".format(job_id, LOCAL_AGGREGATE_FILE, fed_step)
             if not os.path.exists(tmp_aggregate_dir):
@@ -78,6 +81,26 @@ class FedAvgAggregator(Aggregator):
         else:
             pass
         print("aggregate success!!")
+
+
+    def _broadcast(self, job_list, connected_client_list, base_model_path, client_num):
+        aggregated_files, job_ids = self._prepare_upload_aggregate_file(job_list, base_model_path)
+
+        for client in connected_client_list:
+            client_url = "http://{}".format(client)
+            response = requests.post("/".join([client_url, "aggregatepars"], data=job_ids, files=aggregated_files))
+            print(response.json())
+
+    def _prepare_upload_aggregate_file(self, job_list, base_model_path):
+        aggregated_files = {}
+        job_ids = []
+        for job in job_list:
+            send_aggregate_filename = "tmp_aggregate_{}".format(job.get_job_id())
+            tmp_aggregate_dir = base_model_path + "\\models_{}\\tmp_aggregate_pars".format(job.get_job_id())
+            tmp_aggregate_path = tmp_aggregate_dir + "\\" + os.listdir(tmp_aggregate_dir)[-1]
+            aggregated_files[send_aggregate_filename] = (send_aggregate_filename, open(tmp_aggregate_path, "rb"))
+            job_ids.append(job.get_job_id())
+        return aggregated_files, job_ids
 
 class DistillationAggregator(Aggregator):
     def __init__(self):

@@ -83,3 +83,11 @@ class TrainStrategyFactoryDecoder(json.JSONDecoder):
         #optimizer, learning_rate, loss_function, batch_size, epoch
         return TrainStrategyFatorcy(dict['optimizer'], dict['learning_rate'], dict['loss_function'],
                                     dict['batch_size'], dict['epoch'])
+
+
+
+def return_data_decorator(func):
+    def wrapper(*args,**kwargs):
+        data, code = func(*args,**kwargs)
+        return json.dumps({'data':data, 'code':code})
+    return wrapper

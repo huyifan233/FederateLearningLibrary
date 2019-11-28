@@ -2,6 +2,7 @@ import torch
 import json
 import torch.nn.functional as F
 import time, os, pickle, requests, importlib, shutil
+from flask import url_for
 from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.entity import runtime_config
@@ -70,9 +71,13 @@ class Trainer(object):
 
                 time.sleep(5)
         else:
-            self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
-            #self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
-            self._trainer_mpc_exec(self.server_url)
+            response = requests.post("/".join([self.server_url, "register", self.client_ip, self.client_port, self.client_id]))
+            if response.json()['code'] == 200:
+                self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
+                #self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
+                self._trainer_mpc_exec(self.server_url)
+            else:
+                print("connect to parameter server fail, please check your internet")
 
     def _train(self, data, job, train_model, job_models_path, fed_step):
         train_strategy = job.get_train_strategy()
@@ -165,18 +170,53 @@ class Trainer(object):
                     f.write(line)
                 f.close()
 
+    def _prepare_job_init_model_pars(self, job, server_url):
+        job_init_model_pars_dir = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH + \
+                              "models_{}\\tmp_aggregate_pars".format(job.get_job_id())
+        if len(os.listdir(job_init_model_pars_dir)) == 0:
+            #print("/".join([server_url, "modelpars", job.get_job_id()]))
+            response = requests.get("/".join([server_url, "modelpars", job.get_job_id()]))
+            with open(job_init_model_pars_dir+"\\avg_pars_0", "wb") as f:
+                for chunck in response.iter_content(chunk_size=512):
+                    if chunck:
+                        f.write(chunck)
+
+
+    def _prepare_upload_client_model_pars(self, job, client_id, fed_avg):
+        job_init_model_pars_dir = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH + \
+                                  "models_{}\\models_{}".format(job.get_job_id(), client_id)
+        tmp_parameter_path = "tmp_parameters_{}".format(fed_avg)
+
+        files = {
+            'tmp_parameter_file': ('tmp_parameter_file', open(job_init_model_pars_dir+"\\"+tmp_parameter_path, "rb"))
+        }
+        return files
 
 
     def _trainer_mpc_exec(self, server_url):
-        #TODO: MPC trainer support
+
         while True:
             response = requests.get("/".join([server_url, "jobs"]))
             response_data = response.json()
             job_list_str = response_data['data']
             for job_str in job_list_str:
                 job = json.loads(job_str, cls=JobDecoder)
-                print(job.get_train_strategy().get_batch_size())
-                print(job.get_train_model())
+                self._prepare_job_model(job)
+                self._prepare_job_init_model_pars(job, server_url)
+                aggregat_file, fed_step = self._find_latest_aggregate_model_pars(job.get_job_id())
+                if aggregat_file is not None and self.fed_step != fed_step:
+                    job_models_path = self._create_job_models_dir(self.client_id, job.get_job_id())
+                    job_model = self._load_job_model(job.get_job_id(), job.get_train_model_class_name())
+                    job_model.load_state_dict(torch.load(aggregat_file))
+                    self.fed_step = fed_step
+                    future = self.trainer_executor_pool.submit(self._train, self.data, job, job_model,
+                                                               job_models_path, self.fed_step)
+                    future.result()
+                    files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step)
+                    response = requests.post("/".join([server_url, self.client_id, job.get_job_id(), self.fed_step],
+                                                      files=files))
+                    print(response.json()['data'])
+
             time.sleep(5)
 
 

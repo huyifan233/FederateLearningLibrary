@@ -4,7 +4,7 @@ WAITING_JOB_LIST = list()
 PENDING_JOB_LIST = list()
 EXEC_JOB_LIST = list()
 CONNECTED_TRAINER_LIST = list()
-
+WAITING_BROADCAST_AGGREGATED_JOB_LIST = list()
 
 def get_waiting_job():
     return WAITING_JOB_LIST
