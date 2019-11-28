@@ -1,12 +1,14 @@
-
-import time, os, pickle
-import importlib
 import torch
+import json
 import torch.nn.functional as F
+import time, os, pickle, requests, importlib, shutil
 from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.entity import runtime_config
 from tianshu_fl.core.strategy import RunTimeStrategy
+from tianshu_fl.core import communicate_client
+from tianshu_fl.utils.utils import JobDecoder
+from tianshu_fl.entity.job import Job
 
 
 JOB_PATH = "res\\jobs"
@@ -15,7 +17,7 @@ AGGREGATE_PATH = "tmp_aggregate_pars"
 
 
 class Trainer(object):
-    def __init__(self, work_mode, data, client_id, concurrent_num=3):
+    def __init__(self, work_mode, data, client_id, client_ip, client_port, server_url, concurrent_num=3):
         self.work_mode = work_mode
         self.data = data
         self.client_id = client_id
@@ -25,6 +27,10 @@ class Trainer(object):
         self.fed_step = 0
         self.job_iter_dict = {}
         self.is_finish = True
+        self.client_ip = client_ip
+        self.client_port = client_port
+        self.server_url = server_url
+
 
 
     def start(self):
@@ -49,7 +55,6 @@ class Trainer(object):
                         if job.get_job_id() in runtime_config.EXEC_JOB_LIST:
                             runtime_config.EXEC_JOB_LIST.remove(job.get_job_id())
                         self.fed_step = fed_step
-
                     if job.get_job_id() not in runtime_config.EXEC_JOB_LIST:
                         job_model = self._load_job_model(job.get_job_id(), job.get_train_model_class_name())
                         if aggregat_file is not None:
@@ -65,9 +70,9 @@ class Trainer(object):
 
                 time.sleep(5)
         else:
-            #TODO: MPC support
-            pass
-
+            self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
+            #self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
+            self._trainer_mpc_exec(self.server_url)
 
     def _train(self, data, job, train_model, job_models_path, fed_step):
         train_strategy = job.get_train_strategy()
@@ -107,11 +112,11 @@ class Trainer(object):
         job_list = []
         for file in os.listdir(job_path):
             # print("job file: ", job_path+"\\"+file)
-            f = open(job_path+"\\"+file, "rb")
-            job = pickle.load(f)
-            job_list.append(job)
-            if job_iter_dict.get(job.get_job_id()) is None:
-                job_iter_dict[job.get_job_id()] = 0
+            with open(job_path+"\\"+file, "rb") as f:
+                job = pickle.load(f)
+                job_list.append(job)
+                if job_iter_dict.get(job.get_job_id()) is None:
+                    job_iter_dict[job.get_job_id()] = 0
         return job_list
 
 
@@ -133,6 +138,10 @@ class Trainer(object):
         job_model_path = LOCAL_MODEL_BASE_PATH + "models_{}\\{}".format(job_id, AGGREGATE_PATH)
         if not os.path.exists(job_model_path):
             os.makedirs(job_model_path)
+            init_model_pars_path = LOCAL_MODEL_BASE_PATH + "models_{}\\init_model_pars_{}".format(job_id, job_id)
+            first_aggregate_path = LOCAL_MODEL_BASE_PATH + "models_{}\\tmp_aggregate_pars\\avg_pars_{}".format(job_id, 0)
+            if os.path.exists(init_model_pars_path):
+                shutil.move(init_model_pars_path, first_aggregate_path)
         file_list = os.listdir(job_model_path)
 
         if len(file_list) != 0:
@@ -145,16 +154,30 @@ class Trainer(object):
             self._prepare_job_model(job)
 
 
+
     def _prepare_job_model(self, job):
         job_model_path = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH + "models_{}".format(job.get_job_id())
         job_init_model_path = job_model_path + "\\init_model_{}.py".format(job.get_job_id())
-        model_f = open(job.get_train_model(), "r")
-        if not os.path.exists(job_init_model_path):
-            f = open(job_init_model_path, "w")
-            for line in model_f.readlines():
-                f.write(line)
-            f.close()
-        model_f.close()
+        with open(job.get_train_model(), "r") as model_f:
+            if not os.path.exists(job_init_model_path):
+                f = open(job_init_model_path, "w")
+                for line in model_f.readlines():
+                    f.write(line)
+                f.close()
+
+
+
+    def _trainer_mpc_exec(self, server_url):
+        #TODO: MPC trainer support
+        while True:
+            response = requests.get("/".join([server_url, "jobs"]))
+            response_data = response.json()
+            job_list_str = response_data['data']
+            for job_str in job_list_str:
+                job = json.loads(job_str, cls=JobDecoder)
+                print(job.get_train_strategy().get_batch_size())
+                print(job.get_train_model())
+            time.sleep(5)
 
 
 

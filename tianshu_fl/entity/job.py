@@ -3,14 +3,13 @@
 
 class Job(object):
 
-    def __init__(self):
-        self.server_host = None
-        self.job_id = None
-        self.train_strategy = None
-        self.train_model = None
-        self.train_model_class_name = None
-        self.iterations = None
-        self.status = None
+    def __init__(self, server_host, job_id, train_strategy, train_model, train_model_class_name, iterations):
+        self.server_host = server_host
+        self.job_id = job_id
+        self.train_strategy = train_strategy
+        self.train_model = train_model
+        self.train_model_class_name = train_model_class_name
+        self.iterations = iterations
 
     def set_server_host(self, server_host):
         self.server_host = server_host

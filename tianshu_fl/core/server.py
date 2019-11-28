@@ -5,7 +5,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.aggregator import FedAvgAggregator
 from tianshu_fl.core.strategy import WorkModeStrategy, FedrateStrategy
-from tianshu_fl.core import communicate
+from tianshu_fl.core import communicate_server
 
 JOB_PATH = os.path.abspath(".") + "\\res\\jobs"
 BASE_MODEL_PATH = os.path.abspath(".") + "\\res\\models"
@@ -47,7 +47,7 @@ class TianshuFlClusterServer(TianshuFlServer):
 
     def run(self):
         self.executor_pool.submit(self.aggregator.aggregate)
-        self.executor_pool.submit(communicate.start_communicate_server, self.api_version, self.ip, self.port)
+        self.executor_pool.submit(communicate_server.start_communicate_server, self.api_version, self.ip, self.port)
 
 
 

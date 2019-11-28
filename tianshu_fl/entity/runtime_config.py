@@ -3,7 +3,7 @@
 WAITING_JOB_LIST = list()
 PENDING_JOB_LIST = list()
 EXEC_JOB_LIST = list()
-
+CONNECTED_TRAINER_LIST = list()
 
 
 def get_waiting_job():
@@ -29,3 +29,4 @@ def add_exec_job(job):
 
 def get_exec_job():
     return EXEC_JOB_LIST.get()
+

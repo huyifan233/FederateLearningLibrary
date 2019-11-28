@@ -36,13 +36,13 @@ class StrategyFactory(object):
 
 class TrainStrategyFatorcy(StrategyFactory):
 
-    def __init__(self):
+    def __init__(self, optimizer, learning_rate, loss_function, batch_size, epoch):
         super(StrategyFactory, self).__init__()
-        self.optimizer = None
-        self.learning_rate = None
-        self.loss_function = None
-        self.batch_size = None
-        self.epoch = None
+        self.optimizer = optimizer
+        self.learning_rate = learning_rate
+        self.loss_function = loss_function
+        self.batch_size = batch_size
+        self.epoch = epoch
 
     def get_loss_functions(self):
         loss_functions = [RunTimeStrategy.L1_LOSS, RunTimeStrategy.MSE_LOSS, RunTimeStrategy.CROSSENTROPY_LOSS, RunTimeStrategy.NLL_LOSS, RunTimeStrategy.POISSIONNLL_LOSS,

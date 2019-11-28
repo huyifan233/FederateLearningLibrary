@@ -18,16 +18,14 @@ class JobManager(object):
 
     def generate_job(self, work_mode, train_code_strategy, model, iter):
         with lock:
-            job = Job()
-            job.set_job_id(JobUtils.generate_job_id())
+            #server_host, job_id, train_strategy, train_model, train_model_class_name, iterations
+            job = Job(None, JobUtils.generate_job_id(), train_code_strategy, inspect.getsourcefile(model),
+                      model.__name__, iter)
             if work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
                 job.set_server_host("localhost:8080")
             else:
                 job.set_server_host("")
-            job.set_train_strategy(train_code_strategy)
-            job.set_train_model(inspect.getsourcefile(model))
-            job.set_train_model_class_name(model.__name__)
-            job.set_iterations(iter)
+
             return job
 
     def submit_job(self, job, model, model_path):

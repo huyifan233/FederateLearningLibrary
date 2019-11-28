@@ -49,7 +49,6 @@ class FedAvgAggregator(Aggregator):
         super(FedAvgAggregator, self).__init__(work_mode, job_path, base_model_path)
         self.fed_step = 0
     def aggregate(self):
-        print(self.work_mode)
         if self.work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
             while True:
                 job_list = self.load_job_list(self.job_path)
