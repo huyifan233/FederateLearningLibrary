@@ -7,13 +7,14 @@ from tianshu_fl.core.job_detector import JobDetector
 from torch import nn
 import torch.nn.functional as F
 
-
-
+CLIENT_IP = "127.0.0.1"
+CLIENT_PORT = 8081
 CLIENT_ID = 0
+SERVER_URL = "http://127.0.0.1:9763"
 
-def start_trainer(work_mode, client_id, data):
+def start_trainer(work_mode, client_ip, client_port, client_id, server_url, data):
 
-    Trainer(work_mode, data, client_id, 3).start()
+    Trainer(work_mode, data, str(client_id), client_ip, str(client_port), server_url, 3).start()
     #print(os.path.abspath("."))
 
 if __name__ == "__main__":
@@ -24,7 +25,7 @@ if __name__ == "__main__":
 
     #start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, CLIENT_ID, mnist_data)
 
-    start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, CLIENT_ID, mnist_data)
+    start_trainer(WorkModeStrategy.WORKMODE_STANDALONE, CLIENT_IP, CLIENT_PORT, CLIENT_ID, SERVER_URL, mnist_data)
 
 
 

@@ -17,13 +17,16 @@ INIT_MODEL_PARS = "avg_pars_0"
 app = Flask(__name__)
 
 
+
 @app.route("/test/<name>")
 @return_data_decorator
 def test_flask_server(name):
 
     return name, 200
 
-@app.route("/register/<ip>/<port>/<client_id>", methods=['POST'])
+
+
+@app.route("/register/<ip>/<port>/<client_id>", methods=['POST'], endpoint='register_trainer')
 @return_data_decorator
 def register_trainer(ip, port, client_id):
     trainer_host = ip+":"+port
@@ -38,7 +41,8 @@ def register_trainer(ip, port, client_id):
     else:
         return 'already connected', 201
 
-@app.route("/offline/<ip>/<port>", methods=['PUT'])
+
+@app.route("/offline/<ip>/<port>", methods=['PUT'], endpoint='offline')
 @return_data_decorator
 def offline(ip, port):
     trainer_host = ip+":"+port
@@ -47,7 +51,8 @@ def offline(ip, port):
         return 'offline success', 200
     return 'already offline', 201
 
-@app.route("/jobs", methods=['GET'])
+
+@app.route("/jobs", methods=['GET'], endpoint='acquire_job_list')
 @return_data_decorator
 def acquire_job_list():
     job_str_list = []
@@ -57,7 +62,8 @@ def acquire_job_list():
         job_str_list.append(job_str)
     return job_str_list, 200
 
-@app.route("/modelpars/<job_id>", methods=['GET'])
+
+@app.route("/modelpars/<job_id>", methods=['GET'], endpoint='acquire_init_model_pars')
 @return_data_decorator
 def acquire_init_model_pars(job_id):
     print(job_id)
@@ -65,7 +71,8 @@ def acquire_init_model_pars(job_id):
     return send_from_directory(init_model_pars_dir, INIT_MODEL_PARS, as_attachment=True)
 
 
-@app.route("/modelpars/<client_id>/<job_id>", methods=['POST'])
+
+@app.route("/modelpars/<client_id>/<job_id>", methods=['POST'], endpoint='submit_model_parameter')
 @return_data_decorator
 def submit_model_parameter(client_id, job_id, fed_avg):
     tmp_parameter_file = request.files['tmp_parameter_file']
@@ -81,7 +88,8 @@ def submit_model_parameter(client_id, job_id, fed_avg):
     return 'submit_success', 200
 
 
-@app.route("/aggregatepars", methods=['GET'])
+
+@app.route("/aggregatepars", methods=['GET'], endpoint='get_aggregate_parameter')
 @return_data_decorator
 def get_aggregate_parameter():
     return ''

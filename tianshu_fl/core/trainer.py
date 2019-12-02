@@ -71,7 +71,8 @@ class Trainer(object):
 
                 time.sleep(5)
         else:
-            response = requests.post("/".join([self.server_url, "register", self.client_ip, self.client_port, self.client_id]))
+            response = requests.post("/".join([self.server_url, "register", self.client_ip, '%s' % self.client_port, '%s' % self.client_id]))
+            print(response.json())
             if response.json()['code'] == 200:
                 self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
                 #self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)

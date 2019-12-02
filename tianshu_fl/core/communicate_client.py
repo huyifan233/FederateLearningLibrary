@@ -1,16 +1,20 @@
 import pickle, os
 from flask import Flask, request
 from werkzeug.serving import run_simple
+from tianshu_fl.utils.utils import return_data_decorator
+
 
 app = Flask(__name__)
 
 BASE_MODEL_PATH = os.path.abspath(".")+"\\res\\models"
 
 
+@return_data_decorator
 @app.route("/", methods=['GET'])
 def test_client():
     return "Hello tianshu_fl client"
 
+@return_data_decorator
 @app.route("/aggregatepars", methods=['POST'])
 def submit_aggregate_pars():
 
