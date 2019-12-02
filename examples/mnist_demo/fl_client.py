@@ -1,5 +1,6 @@
 import torch
-import os
+import os, sys
+sys.path.append("C:\\Users\\tchennech\\Documents\\FederateLearningLibrary")
 from torchvision import datasets, transforms
 from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.core.trainer import Trainer
@@ -18,6 +19,9 @@ def start_trainer(work_mode, client_ip, client_port, client_id, server_url, data
     #print(os.path.abspath("."))
 
 if __name__ == "__main__":
+
+    CLIENT_ID = int(sys.argv[1])
+
     mnist_data = datasets.MNIST("./mnist_data", download=True, train=True, transform=transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.13066062,), (0.30810776,))

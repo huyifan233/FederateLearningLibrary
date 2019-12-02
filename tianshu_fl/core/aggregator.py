@@ -62,7 +62,12 @@ class FedAvgAggregator(Aggregator):
                     futures.result()
                     self.fed_step = fed_step
                     WAITING_BROADCAST_AGGREGATED_JOB_LIST.append(job.get_job_id())
-            self._broadcast(WAITING_BROADCAST_AGGREGATED_JOB_LIST, CONNECTED_TRAINER_LIST, self.base_model_path)
+                    if job.get_iterations() <= self.fed_step:
+                        self._save_final_model_pars(job.get_job_id(), self.base_model_path + "\\models_{}\\tmp_aggregate_pars".format(job.get_job_id()))
+
+
+            if self.work_mode == WorkModeStrategy.WORKMODE_CLUSTER:
+                self._broadcast(WAITING_BROADCAST_AGGREGATED_JOB_LIST, CONNECTED_TRAINER_LIST, self.base_model_path)
             time.sleep(5)
 
 
@@ -73,17 +78,16 @@ class FedAvgAggregator(Aggregator):
             for i in range(1, len(job_model_pars)):
                 avg_model_par[key] += job_model_pars[i][key]
             avg_model_par[key] = torch.div(avg_model_par[key], len(job_model_pars))
-            tmp_aggregate_dir = base_model_path + "\\models_{}".format(job_id)
-            tmp_aggregate_path = base_model_path +"\\models_{}\\{}_{}".format(job_id, LOCAL_AGGREGATE_FILE, fed_step)
-            if not os.path.exists(tmp_aggregate_dir):
-                os.makedirs(tmp_aggregate_path)
-            torch.save(avg_model_par, tmp_aggregate_path)
-        else:
-            pass
+        tmp_aggregate_dir = base_model_path + "\\models_{}".format(job_id)
+        tmp_aggregate_path = base_model_path +"\\models_{}\\{}_{}".format(job_id, LOCAL_AGGREGATE_FILE, fed_step)
+        if not os.path.exists(tmp_aggregate_dir):
+            os.makedirs(tmp_aggregate_path)
+        torch.save(avg_model_par, tmp_aggregate_path)
+
         print("aggregate success!!")
 
 
-    def _broadcast(self, job_list, connected_client_list, base_model_path, client_num):
+    def _broadcast(self, job_list, connected_client_list, base_model_path):
         aggregated_files, job_ids = self._prepare_upload_aggregate_file(job_list, base_model_path)
 
         for client in connected_client_list:
@@ -101,6 +105,20 @@ class FedAvgAggregator(Aggregator):
             aggregated_files[send_aggregate_filename] = (send_aggregate_filename, open(tmp_aggregate_path, "rb"))
             job_ids.append(job.get_job_id())
         return aggregated_files, job_ids
+
+    def _save_final_model_pars(self,  job_id, tmp_aggregate_dir):
+        job_model_dir = self.base_model_path + "\\models_{}".format(job_id)
+        final_model_pars_path = job_model_dir + "\\final_model_pars"
+        if not os.path.exists(job_model_dir):
+            os.makedirs(job_model_dir)
+
+        with open(final_model_pars_path, "wb") as final_f:
+            with open(os.listdir(tmp_aggregate_dir)[-1], "rb") as f:
+                for line in f.readlines():
+                    final_f.write(line)
+
+
+
 
 class DistillationAggregator(Aggregator):
     def __init__(self):

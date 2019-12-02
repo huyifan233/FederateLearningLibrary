@@ -1,4 +1,5 @@
-import os
+import os,sys
+sys.path.append("C:\\Users\\tchennech\\Documents\\FederateLearningLibrary")
 from torch import nn
 import torch.nn.functional as F
 import tianshu_fl.core.strategy as strategy
@@ -41,12 +42,12 @@ class Net(nn.Module):
 
 def generate_train_strategy(optimizer, loss_function, lr=0.01, epoch=100, batch_size=32):
 
-    train_code_strategy = strategy.TrainStrategyFatorcy()
-    train_code_strategy.set_optimizer(optimizer)
-    train_code_strategy.set_loss_function(loss_function)
-    train_code_strategy.set_learning_rate(lr)
-    train_code_strategy.set_epoch(epoch)
-    train_code_strategy.set_batch_size(batch_size)
+    train_code_strategy = strategy.TrainStrategyFatorcy(optimizer, lr, loss_function, batch_size, epoch)
+    # train_code_strategy.set_optimizer(optimizer)
+    # train_code_strategy.set_loss_function(loss_function)
+    # train_code_strategy.set_learning_rate(lr)
+    # train_code_strategy.set_epoch(epoch)
+    # train_code_strategy.set_batch_size(batch_size)
     return train_code_strategy
 
 if __name__ == "__main__":
@@ -56,5 +57,5 @@ if __name__ == "__main__":
 
     model = Net()
     job_manager = JobManager(JOB_PATH)
-    job = job_manager.generate_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy, Net, 3)
+    job = job_manager.generate_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy, Net, 10)
     job_manager.submit_job(job, model, MODEL_PATH)

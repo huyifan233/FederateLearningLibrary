@@ -72,8 +72,8 @@ class Trainer(object):
                 time.sleep(5)
         else:
             response = requests.post("/".join([self.server_url, "register", self.client_ip, '%s' % self.client_port, '%s' % self.client_id]))
-            print(response.json())
-            if response.json()['code'] == 200:
+            response_json = response.json()
+            if response_json['code'] == 200 or response_json['code'] == 201:
                 self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
                 #self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
                 self._trainer_mpc_exec(self.server_url)
@@ -104,7 +104,7 @@ class Trainer(object):
 
     def _parse_optimizer(self, optimizer, model, lr):
         if optimizer == RunTimeStrategy.OPTIM_SGD:
-            return torch.optim.SGD(model.parameters(), lr, momentum=True)
+            return torch.optim.SGD(model.parameters(), lr, momentum=0.5)
 
 
     def _parse_loss_function(self, loss_function, output, label):

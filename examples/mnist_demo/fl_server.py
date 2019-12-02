@@ -1,9 +1,12 @@
+import sys
+sys.path.append("C:\\Users\\tchennech\\Documents\\FederateLearningLibrary")
 
 from tianshu_fl.core.server import TianshuFlStandaloneServer, TianshuFlClusterServer
 from tianshu_fl.core.job_detector import JobDetector
 from tianshu_fl.core.strategy import WorkModeStrategy, FedrateStrategy
 
-WORK_MODE = WorkModeStrategy.WORKMODE_CLUSTER
+
+WORK_MODE = WorkModeStrategy.WORKMODE_STANDALONE
 FEDERATE_STRATEGY = FedrateStrategy.FED_AVG
 IP = '0.0.0.0'
 PORT = 9763
