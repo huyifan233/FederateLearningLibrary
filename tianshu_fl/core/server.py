@@ -38,7 +38,7 @@ class TianshuFlClusterServer(TianshuFlServer):
         super(TianshuFlClusterServer, self).__init__()
         self.executor_pool = ThreadPoolExecutor(2)
         if federate_strategy == FedrateStrategy.FED_AVG:
-            self.aggregator = FedAvgAggregator(WorkModeStrategy.WORKMODE_STANDALONE, JOB_PATH, BASE_MODEL_PATH)
+            self.aggregator = FedAvgAggregator(WorkModeStrategy.WORKMODE_CLUSTER, JOB_PATH, BASE_MODEL_PATH)
         else:
             pass
         self.ip = ip

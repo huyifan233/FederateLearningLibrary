@@ -72,18 +72,17 @@ def acquire_init_model_pars(job_id):
 
 
 
-@app.route("/modelpars/<client_id>/<job_id>", methods=['POST'], endpoint='submit_model_parameter')
+@app.route("/modelpars/<client_id>/<job_id>/<fed_step>", methods=['POST'], endpoint='submit_model_parameter')
 @return_data_decorator
-def submit_model_parameter(client_id, job_id, fed_avg):
+def submit_model_parameter(client_id, job_id, fed_step):
     tmp_parameter_file = request.files['tmp_parameter_file']
     model_pars_dir = BASE_MODEL_PATH+"\\models_{}\\models_{}".format(job_id, client_id)
     if not os.path.exists(model_pars_dir):
         os.makedirs(model_pars_dir)
-    model_pars_path = BASE_MODEL_PATH+"\\models_{}\\models_{}\\tmp_parameter_{}".format(job_id, client_id, fed_avg)
+    model_pars_path = BASE_MODEL_PATH+"\\models_{}\\models_{}\\tmp_parameters_{}".format(job_id, client_id, fed_step)
     with open(model_pars_path, "wb") as f:
-        with open(tmp_parameter_file, "rb") as tmp_f:
-            for line in tmp_f.readlines():
-                f.write(line)
+        for line in tmp_parameter_file.readlines():
+            f.write(line)
 
     return 'submit_success', 200
 

@@ -18,18 +18,18 @@ def test_client():
 @app.route("/aggregatepars", methods=['POST'])
 def submit_aggregate_pars():
 
+    print("receive aggregate files")
     recv_aggregate_files = request.files
-    job_ids = request.data
-
-    for job_id in job_ids:
-        tmp_aggregate_file = recv_aggregate_files['tmp_aggregate_{}'.format(job_id)]
-        job_base_model_dir = BASE_MODEL_PATH + "\\models_{}\\tmp_aggregate_pars".format(job_id)
-        latest_num = len(os.listdir(job_base_model_dir)) - 1
-        latest_tmp_aggretate_file_path = job_base_model_dir + "\\avg_pars_{}".format(latest_num)
-        with open(latest_tmp_aggretate_file_path, "wb") as f:
-            with open(tmp_aggregate_file, "rb") as tmp_f:
-                for line in tmp_f.readlines():
-                    f.write(line)
+    for filename in recv_aggregate_files.iterkeys():
+        print(recv_aggregate_files[filename])
+        # tmp_aggregate_file = recv_aggregate_files['tmp_aggregate_{}'.format(job_id)]
+        # job_base_model_dir = BASE_MODEL_PATH + "\\models_{}\\tmp_aggregate_pars".format(job_id)
+        # latest_num = len(os.listdir(job_base_model_dir)) - 1
+        # latest_tmp_aggretate_file_path = job_base_model_dir + "\\avg_pars_{}".format(latest_num)
+        # with open(latest_tmp_aggretate_file_path, "wb") as f:
+        #     with open(tmp_aggregate_file, "rb") as tmp_f:
+        #         for line in tmp_f.readlines():
+        #             f.write(line)
 
     return "ok", 200
 

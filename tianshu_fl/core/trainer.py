@@ -183,9 +183,9 @@ class Trainer(object):
                         f.write(chunck)
 
 
-    def _prepare_upload_client_model_pars(self, job, client_id, fed_avg):
+    def _prepare_upload_client_model_pars(self, job_id, client_id, fed_avg):
         job_init_model_pars_dir = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH + \
-                                  "models_{}\\models_{}".format(job.get_job_id(), client_id)
+                                  "models_{}\\models_{}".format(job_id, client_id)
         tmp_parameter_path = "tmp_parameters_{}".format(fed_avg)
 
         files = {
@@ -214,9 +214,9 @@ class Trainer(object):
                                                                job_models_path, self.fed_step)
                     future.result()
                     files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step)
-                    response = requests.post("/".join([server_url, self.client_id, job.get_job_id(), self.fed_step],
-                                                      files=files))
-                    print(response.json()['data'])
+                    response = requests.post("/".join([server_url, "modelpars", "%s" % self.client_id, "%s" % job.get_job_id(), "%s" % self.fed_step]),
+                                                      data=None, files=files)
+                    print(response)
 
             time.sleep(5)
 
