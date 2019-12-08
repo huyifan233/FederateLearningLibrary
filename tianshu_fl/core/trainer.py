@@ -76,7 +76,7 @@ class Trainer(object):
             if response_json['code'] == 200 or response_json['code'] == 201:
                 #self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
                 self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
-                communicate_client.start_communicate_client(self.client_ip, self.client_port)
+                self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
                 #self._trainer_mpc_exec(self.server_url)
             else:
                 print("connect to parameter server fail, please check your internet")
