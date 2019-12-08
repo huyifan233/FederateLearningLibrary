@@ -17,7 +17,7 @@ def start_trainer(work_mode, client_id, data):
     if work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
         Trainer(work_mode, data, client_id, None, None, 3).start()
     else:
-        Trainer(work_mode, data, client_id, CLIENT_IP, CLIENT_PORT, SERVER_URL, 3).start()
+        Trainer(work_mode, data, client_id, CLIENT_IP, CLIENT_PORT, SERVER_URL, 5).start()
     #print(os.path.abspath("."))
 
 if __name__ == "__main__":

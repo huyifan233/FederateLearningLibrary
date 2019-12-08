@@ -18,14 +18,14 @@ AGGREGATE_PATH = "tmp_aggregate_pars"
 
 
 class Trainer(object):
-    def __init__(self, work_mode, data, client_id, client_ip, client_port, server_url, concurrent_num=3):
+    def __init__(self, work_mode, data, client_id, client_ip, client_port, server_url, concurrent_num=5):
         self.work_mode = work_mode
         self.data = data
         self.client_id = client_id
         self.concurrent_num = concurrent_num
         self.trainer_executor_pool = ThreadPoolExecutor(self.concurrent_num)
         self.job_path = os.path.abspath(".")+"\\"+JOB_PATH
-        self.fed_step = 0
+        self.fed_step = {}
         self.job_iter_dict = {}
         self.is_finish = True
         self.client_ip = client_ip
@@ -52,10 +52,10 @@ class Trainer(object):
                             and self.job_iter_dict.get(job.get_job_id()) >= job.get_iterations():
                         continue
                     aggregat_file, fed_step = self._find_latest_aggregate_model_pars(job.get_job_id())
-                    if aggregat_file is not None and self.fed_step != fed_step:
+                    if aggregat_file is not None and self.fed_step.get(job.get_job_id()) != fed_step:
                         if job.get_job_id() in runtime_config.EXEC_JOB_LIST:
                             runtime_config.EXEC_JOB_LIST.remove(job.get_job_id())
-                        self.fed_step = fed_step
+                        self.fed_step[job.get_job_id()] = fed_step
                     if job.get_job_id() not in runtime_config.EXEC_JOB_LIST:
                         job_model = self._load_job_model(job.get_job_id(), job.get_train_model_class_name())
                         if aggregat_file is not None:
@@ -63,7 +63,7 @@ class Trainer(object):
                             job_model.load_state_dict(torch.load(aggregat_file))
                         job_models_path = self._create_job_models_dir(self.client_id, job.get_job_id())
                         future = self.trainer_executor_pool.submit(self._train, self.data, job, job_model,
-                                                                   job_models_path, self.fed_step)
+                                                                   job_models_path, self.fed_step[job.get_job_id()])
                         runtime_config.EXEC_JOB_LIST.append(job.get_job_id())
                         print("job_{} is start training".format(job.get_job_id()))
                         future.result()
@@ -74,9 +74,10 @@ class Trainer(object):
             response = requests.post("/".join([self.server_url, "register", self.client_ip, '%s' % self.client_port, '%s' % self.client_id]))
             response_json = response.json()
             if response_json['code'] == 200 or response_json['code'] == 201:
-                self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
-                #self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
-                self._trainer_mpc_exec(self.server_url)
+                #self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
+                self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
+                communicate_client.start_communicate_client(self.client_ip, self.client_port)
+                #self._trainer_mpc_exec(self.server_url)
             else:
                 print("connect to parameter server fail, please check your internet")
 
@@ -198,23 +199,23 @@ class Trainer(object):
 
         while True:
             response = requests.get("/".join([server_url, "jobs"]))
+
             response_data = response.json()
             job_list_str = response_data['data']
+            print(job_list_str)
             for job_str in job_list_str:
                 job = json.loads(job_str, cls=JobDecoder)
                 self._prepare_job_model(job)
                 self._prepare_job_init_model_pars(job, server_url)
                 aggregat_file, fed_step = self._find_latest_aggregate_model_pars(job.get_job_id())
-                if aggregat_file is not None and self.fed_step != fed_step:
+                if aggregat_file is not None and self.fed_step.get(job.get_job_id()) != fed_step:
                     job_models_path = self._create_job_models_dir(self.client_id, job.get_job_id())
                     job_model = self._load_job_model(job.get_job_id(), job.get_train_model_class_name())
                     job_model.load_state_dict(torch.load(aggregat_file))
-                    self.fed_step = fed_step
-                    future = self.trainer_executor_pool.submit(self._train, self.data, job, job_model,
-                                                               job_models_path, self.fed_step)
-                    future.result()
-                    files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step)
-                    response = requests.post("/".join([server_url, "modelpars", "%s" % self.client_id, "%s" % job.get_job_id(), "%s" % self.fed_step]),
+                    self.fed_step[job.get_job_id()] = fed_step
+                    self._train(self.data, job, job_model, job_models_path, self.fed_step.get(job.get_job_id()))
+                    files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step.get(job.get_job_id()))
+                    response = requests.post("/".join([server_url, "modelpars", "%s" % self.client_id, "%s" % job.get_job_id(), "%s" % self.fed_step[job.get_job_id()]]),
                                                       data=None, files=files)
                     print(response)
 

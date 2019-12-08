@@ -10,7 +10,7 @@ from tianshu_fl.core import communicate_server
 JOB_PATH = os.path.abspath(".") + "\\res\\jobs"
 BASE_MODEL_PATH = os.path.abspath(".") + "\\res\\models"
 
-class TianshuFlServer(threading.Thread):
+class TianshuFlServer():
 
     def __init__(self):
         super(TianshuFlServer, self).__init__()
@@ -19,14 +19,15 @@ class TianshuFlServer(threading.Thread):
 class TianshuFlStandaloneServer(TianshuFlServer):
     def __init__(self, federate_strategy):
         super(TianshuFlStandaloneServer, self).__init__()
+        self.executor_pool = ThreadPoolExecutor(2)
         if federate_strategy == FedrateStrategy.FED_AVG:
             self.aggregator = FedAvgAggregator(WorkModeStrategy.WORKMODE_STANDALONE, JOB_PATH, BASE_MODEL_PATH)
         else:
            pass
 
 
-    def run(self):
-        self.aggregator.aggregate()
+    def start(self):
+        self.executor_pool.submit(self.aggregator.aggregate)
 
 
 
@@ -36,7 +37,7 @@ class TianshuFlClusterServer(TianshuFlServer):
 
     def __init__(self, federate_strategy, ip, port, api_version):
         super(TianshuFlClusterServer, self).__init__()
-        self.executor_pool = ThreadPoolExecutor(2)
+        self.executor_pool = ThreadPoolExecutor(5)
         if federate_strategy == FedrateStrategy.FED_AVG:
             self.aggregator = FedAvgAggregator(WorkModeStrategy.WORKMODE_CLUSTER, JOB_PATH, BASE_MODEL_PATH)
         else:
@@ -45,10 +46,11 @@ class TianshuFlClusterServer(TianshuFlServer):
         self.port = port
         self.api_version = api_version
 
-    def run(self):
-        self.executor_pool.submit(self.aggregator.aggregate)
+    def start(self):
         self.executor_pool.submit(communicate_server.start_communicate_server, self.api_version, self.ip, self.port)
-
+        #self.executor_pool.submit(self.aggregator.aggregate)
+        #communicate_server.start_communicate_server(self.api_version, self.ip, self.port)
+        self.aggregator.aggregate()
 
 
 

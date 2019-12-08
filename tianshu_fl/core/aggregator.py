@@ -7,7 +7,7 @@ import requests
 from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.core.job_manager import JobManager
-from tianshu_fl.entity.runtime_config import WAITING_BROADCAST_AGGREGATED_JOB_LIST, CONNECTED_TRAINER_LIST
+from tianshu_fl.entity.runtime_config import WAITING_BROADCAST_AGGREGATED_JOB_ID_LIST, CONNECTED_TRAINER_LIST
 LOCAL_AGGREGATE_FILE = "tmp_aggregate_pars\\avg_pars"
 
 class Aggregator(object):
@@ -15,7 +15,6 @@ class Aggregator(object):
         self.job_path = job_path
         self.base_model_path = base_model_path
         self.aggregate_executor_pool = ThreadPoolExecutor(concurrent_num)
-
         self.work_mode = work_mode
 
     # def load_job_list(self, job_path):
@@ -27,6 +26,7 @@ class Aggregator(object):
     #     return job_list
 
     def load_aggregate_model_pars(self, job_model_pars_path, fed_step):
+        fed_step = 0 if fed_step is None else fed_step
         job_model_pars = []
         last_model_par_file_num = 0
         #print("job_model_pars_path: ", job_model_pars_path)
@@ -60,24 +60,25 @@ class Aggregator(object):
 class FedAvgAggregator(Aggregator):
     def __init__(self, work_mode, job_path, base_model_path):
         super(FedAvgAggregator, self).__init__(work_mode, job_path, base_model_path)
-        self.fed_step = 0
+        self.fed_step = {}
     def aggregate(self):
 
         while True:
             job_list = JobManager.get_job_list(self.job_path)
-            WAITING_BROADCAST_AGGREGATED_JOB_LIST.clear()
+            WAITING_BROADCAST_AGGREGATED_JOB_ID_LIST.clear()
+            print("job_list: ", job_list)
             for job in job_list:
-                job_model_pars, fed_step = self.load_aggregate_model_pars(self.base_model_path + "\\models_{}".format(job.get_job_id()), self.fed_step)
-                if self.fed_step != fed_step and job_model_pars is not None:
-                    futures = self.aggregate_executor_pool.submit(self._exec, job_model_pars, self.base_model_path, job.get_job_id(), fed_step)
-                    futures.result()
-                    self.fed_step = fed_step
-                    WAITING_BROADCAST_AGGREGATED_JOB_LIST.append(job.get_job_id())
-                    if job.get_iterations() <= self.fed_step:
-                        self._save_final_model_pars(job.get_job_id(), self.base_model_path + "\\models_{}\\tmp_aggregate_pars".format(job.get_job_id()), self.fed_step)
+                job_model_pars, fed_step = self.load_aggregate_model_pars(self.base_model_path + "\\models_{}".format(job.get_job_id()), self.fed_step.get(job.get_job_id()))
+                #print("fed_step: {}, self.fed_step: {}, job_model_pars: {}".format(fed_step, self.fed_step.get(job.get_job_id()), job_model_pars))
+                if self.fed_step.get(job.get_job_id()) != fed_step and job_model_pars is not None:
+                    print("execute aggregate ")
+                    self._exec(job_model_pars, self.base_model_path, job.get_job_id(), fed_step)
+                    self.fed_step[job.get_job_id()] = fed_step
+                    WAITING_BROADCAST_AGGREGATED_JOB_ID_LIST.append(job.get_job_id())
+                    if job.get_iterations() <= self.fed_step[job.get_job_id()]:
+                        self._save_final_model_pars(job.get_job_id(), self.base_model_path + "\\models_{}\\tmp_aggregate_pars".format(job.get_job_id()), self.fed_step[job.get_job_id()])
                     if self.work_mode == WorkModeStrategy.WORKMODE_CLUSTER:
-                        print("exec boardcast ")
-                        self._broadcast(WAITING_BROADCAST_AGGREGATED_JOB_LIST, CONNECTED_TRAINER_LIST, self.base_model_path)
+                        self._broadcast(WAITING_BROADCAST_AGGREGATED_JOB_ID_LIST, CONNECTED_TRAINER_LIST, self.base_model_path)
             time.sleep(5)
 
 
@@ -97,21 +98,20 @@ class FedAvgAggregator(Aggregator):
         print("job: {} the {}th round parameters aggregated successfully!".format(job_id, fed_step))
 
 
-    def _broadcast(self, job_list, connected_client_list, base_model_path):
-        aggregated_files, job_ids = self._prepare_upload_aggregate_file(job_list, base_model_path)
+    def _broadcast(self, job_id_list, connected_client_list, base_model_path):
+        aggregated_files = self._prepare_upload_aggregate_file(job_id_list, base_model_path)
         print("connected client list: ", connected_client_list)
         for client in connected_client_list:
             client_url = "http://{}".format(client)
-            response = requests.post("/".join([client_url, "aggregatepars"], data=job_ids, files=aggregated_files))
-            print(response.json())
+            response = requests.post("/".join([client_url, "aggregatepars"]), data=None, files=aggregated_files)
+            print(response)
 
-    def _prepare_upload_aggregate_file(self, job_list, base_model_path):
+    def _prepare_upload_aggregate_file(self, job_id_list, base_model_path):
         aggregated_files = {}
-        print("construct aggregate files")
-        for job in job_list:
-            tmp_aggregate_dir = base_model_path + "\\models_{}\\tmp_aggregate_pars".format(job.get_job_id())
+        for job_id in job_id_list:
+            tmp_aggregate_dir = base_model_path + "\\models_{}\\tmp_aggregate_pars".format(job_id)
             fed_step = self._find_last_model_file_num(os.listdir(tmp_aggregate_dir))
-            send_aggregate_filename = "tmp_aggregate_{}_{}".format(job.get_job_id(), fed_step)
+            send_aggregate_filename = "tmp_aggregate_{}_{}".format(job_id, fed_step)
             tmp_aggregate_path = tmp_aggregate_dir + "\\" + "avg_pars_{}".format(fed_step)
             aggregated_files[send_aggregate_filename] = (send_aggregate_filename, open(tmp_aggregate_path, "rb"))
         return aggregated_files
