@@ -1,4 +1,4 @@
-import os,sys
+import os, sys, torch
 sys.path.append("C:\\Users\\tchennech\\Documents\\FederateLearningLibrary")
 from torch import nn
 import torch.nn.functional as F
@@ -26,7 +26,20 @@ class Net(nn.Module):
         x = x.view(-1, 4*4*50)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+        return F.softmax(x)
+        #return F.log_softmax(x, dim=1)
+
+    # def p_for_KL(self, x):
+    #     x = F.relu(self.conv1(x))
+    #     x = F.max_pool2d(x, 2, 2)
+    #     x = F.relu(self.conv2(x))
+    #     x = F.max_pool2d(x, 2, 2)
+    #     x = x.view(-1, 4*4*50)
+    #     x = F.relu(self.fc1(x))
+    #     x = self.fc2(x)
+    #     x = self.softmax(x)
+    #     return x
+
 
 def generate_train_strategy(optimizer, loss_function, lr=0.01, epoch=100, batch_size=32):
 

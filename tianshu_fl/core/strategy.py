@@ -97,6 +97,11 @@ class TrainStrategyFatorcy(StrategyFactory):
     def get_epoch(self):
         return self.epoch
 
+    # def set_aggregate_strategy(self, aggregate_strategy):
+    #     self.aggregate_strategy = aggregate_strategy
+    #
+    # def get_aggregate_strategy(self):
+    #     return self.aggregate_strategy
 
 class TestStrategyFactory(StrategyFactory):
 

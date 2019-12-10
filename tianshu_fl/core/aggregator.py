@@ -4,6 +4,7 @@ import pickle
 import torch
 import time
 import requests
+import importlib
 from concurrent.futures import ThreadPoolExecutor
 from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.core.job_manager import JobManager
@@ -66,7 +67,6 @@ class FedAvgAggregator(Aggregator):
         while True:
             job_list = JobManager.get_job_list(self.job_path)
             WAITING_BROADCAST_AGGREGATED_JOB_ID_LIST.clear()
-            print("job_list: ", job_list)
             for job in job_list:
                 job_model_pars, fed_step = self.load_aggregate_model_pars(self.base_model_path + "\\models_{}".format(job.get_job_id()), self.fed_step.get(job.get_job_id()))
                 #print("fed_step: {}, self.fed_step: {}, job_model_pars: {}".format(fed_step, self.fed_step.get(job.get_job_id()), job_model_pars))
@@ -131,10 +131,17 @@ class FedAvgAggregator(Aggregator):
 
 
 class DistillationAggregator(Aggregator):
-    def __init__(self):
-        super(DistillationAggregator, self).__init__()
+    def __init__(self, work_mode, job_path, base_model_path):
+        super(DistillationAggregator, self).__init__(work_mode, job_path, base_model_path)
+        self.fed_step = {}
 
 
 
     def aggregate(self):
-        pass
+        while True:
+            job_list = JobManager.get_job_list(self.job_path)
+            for job in job_list:
+                job_model_pars, fed_step = self.load_aggregate_model_pars(self.base_model_path+"\\models_{}".format(job.get_job_id), self.fed_step.get(job.get_job_id()))
+
+
+            time.sleep(5)
