@@ -34,8 +34,8 @@ class TrainerController(object):
 
     def start(self):
         if self.work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
-            self.trainer_executor_pool.submit(self._trainer_standalone_exec)
-            #self._trainer_standalone_exec()
+            #self.trainer_executor_pool.submit(self._trainer_standalone_exec)
+            self._trainer_standalone_exec()
         else:
             response = requests.post("/".join([self.server_url, "register", self.client_ip, '%s' % self.client_port, '%s' % self.client_id]))
             response_json = response.json()
@@ -62,7 +62,7 @@ class TrainerController(object):
                     if job.get_aggregate_strategy() == FedrateStrategy.FED_AVG:
                         job_train_strategy[job.get_job_id()] = TrainStandloneNormalStrategy(job, self.data, self.fed_step, self.client_id)
                     else:
-                        job_train_strategy[job.get_job_id()] = TrainStandloneDistillationStrategy(job, self.data, self.client_id)
+                        job_train_strategy[job.get_job_id()] = TrainStandloneDistillationStrategy(job, self.data, self.fed_step, self.client_id)
                 self.run(job_train_strategy.get(job.get_job_id()))
             time.sleep(5)
 
