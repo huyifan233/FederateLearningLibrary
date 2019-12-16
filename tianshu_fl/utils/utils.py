@@ -2,6 +2,7 @@ import threading
 import datetime
 import pickle
 import json
+import os
 from json.decoder import WHITESPACE
 
 from tianshu_fl.entity.job import Job
@@ -36,6 +37,19 @@ class JobUtils(Utils):
         return '{}{}'.format(datetime.datetime.now().strftime("%Y%m%d%H%M%S%f"), jobCount.incr(1))
 
     @staticmethod
+    def list_all_jobs(job_path, job_iter_dict):
+        job_list = []
+        for file in os.listdir(job_path):
+            # print("job file: ", job_path+"\\"+file)
+            with open(job_path + "\\" + file, "rb") as f:
+                job = pickle.load(f)
+                job_list.append(job)
+                if job_iter_dict.get(job.get_job_id()) is None:
+                    job_iter_dict[job.get_job_id()] = 0
+        return job_list
+
+
+    @staticmethod
     def serialize(job):
         return pickle.dumps(job)
 
@@ -49,7 +63,9 @@ class JobEncoder(json.JSONEncoder):
                         'train_strategy': json.dumps(o.get_train_strategy(), cls=TrainStrategyFatorcyEncoder),
                         'iterations': o.get_iterations(),
                         'train_model_class_name': o.get_train_model_class_name(),
-                        'server_host': o.get_server_host()
+                        'server_host': o.get_server_host(),
+                        'aggregate_strategy': o.get_aggregate_strategy(),
+                        'distillation_alpha': o.get_distillation_alpha()
                     }
         return json.JSONEncoder.default(self, o)
 
@@ -59,7 +75,7 @@ class JobDecoder(json.JSONDecoder):
         #server_host, job_id, train_strategy, train_model, train_model_class_name, iterations
         return Job(dict['server_host'], dict['job_id'],
                    json.loads(dict['train_strategy'], cls=TrainStrategyFactoryDecoder), dict['train_model'], dict['train_model_class_name'],
-                   dict['iterations'])
+                   dict['aggregate_strategy'], dict['iterations'], dict['distillation_alpha'])
 
 
 

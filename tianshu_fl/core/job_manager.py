@@ -16,11 +16,11 @@ class JobManager(object):
        self.job_path = job_path
 
 
-    def generate_job(self, work_mode, train_code_strategy, model, iter):
+    def generate_job(self, work_mode, train_code_strategy, fed_strategy, model, iter, distillation_alpha):
         with lock:
-            #server_host, job_id, train_strategy, train_model, train_model_class_name, iterations
+            #server_host, job_id, train_strategy, train_model, train_model_class_name, fed_strategy, iterations, distillation_alpha
             job = Job(None, JobUtils.generate_job_id(), train_code_strategy, inspect.getsourcefile(model),
-                      model.__name__, iter)
+                      model.__name__, fed_strategy, iter, distillation_alpha)
             if work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
                 job.set_server_host("localhost:8080")
             else:
@@ -37,7 +37,7 @@ class JobManager(object):
                 os.makedirs(job_model_dir)
             torch.save(model.state_dict(), job_model_dir+"\\init_model_pars_{}".format(job.get_job_id()))
 
-            init_model_path = job_model_dir+"\\init_model_{}".format(job.get_job_id())
+            init_model_path = job_model_dir+"\\init_model_{}.py".format(job.get_job_id())
             with open(init_model_path, "w") as model_f:
                 with open(job.get_train_model(), "r") as model_f2:
                     for line in model_f2.readlines():

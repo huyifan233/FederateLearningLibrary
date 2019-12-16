@@ -27,8 +27,8 @@ class TianshuFlStandaloneServer(TianshuFlServer):
 
 
     def start(self):
-        self.executor_pool.submit(self.aggregator.aggregate)
-
+        #self.executor_pool.submit(self.aggregator.aggregate)
+        self.aggregator.aggregate()
 
 
 

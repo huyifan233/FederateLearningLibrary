@@ -3,13 +3,15 @@
 
 class Job(object):
 
-    def __init__(self, server_host, job_id, train_strategy, train_model, train_model_class_name, iterations):
+    def __init__(self, server_host, job_id, train_strategy, train_model, train_model_class_name, aggregate_strategy, iterations, distillation_alpha=None):
         self.server_host = server_host
         self.job_id = job_id
         self.train_strategy = train_strategy
         self.train_model = train_model
         self.train_model_class_name = train_model_class_name
         self.iterations = iterations
+        self.aggregate_strategy = aggregate_strategy
+        self.alpha = distillation_alpha
 
     def set_server_host(self, server_host):
         self.server_host = server_host
@@ -46,3 +48,16 @@ class Job(object):
 
     def get_iterations(self):
         return self.iterations
+
+    def set_aggregate_stragety(self, aggregate_strategy):
+        self.aggregate_strategy = aggregate_strategy
+
+    def get_aggregate_strategy(self):
+        return self.aggregate_strategy
+
+    def set_distillation_alpha(self, alpha):
+        self.alpha = alpha
+
+    def get_distillation_alpha(self):
+        return self.alpha
+

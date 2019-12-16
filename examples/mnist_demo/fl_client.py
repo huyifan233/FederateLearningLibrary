@@ -3,7 +3,7 @@ import os, sys
 sys.path.append("C:\\Users\\tchennech\\Documents\\FederateLearningLibrary")
 from torchvision import datasets, transforms
 from tianshu_fl.core.strategy import WorkModeStrategy
-from tianshu_fl.core.trainer_strategy import Trainer
+from tianshu_fl.core.trainer_controller import TrainerController
 from tianshu_fl.core.job_detector import JobDetector
 from torch import nn
 import torch.nn.functional as F
@@ -15,12 +15,12 @@ SERVER_URL = "http://127.0.0.1:9763"
 
 def start_trainer(work_mode, client_ip, client_port, client_id, server_url, data):
 
-    Trainer(work_mode, data, str(client_id), client_ip, str(client_port), server_url, 3).start()
+    TrainerController(work_mode, data, str(client_id), client_ip, str(client_port), server_url, 3).start()
 
 if __name__ == "__main__":
 
 
-    CLIENT_ID = int(sys.argv[1])
+    #CLIENT_ID = int(sys.argv[1])
 
 
     mnist_data = datasets.MNIST("./mnist_data", download=True, train=True, transform=transforms.Compose([

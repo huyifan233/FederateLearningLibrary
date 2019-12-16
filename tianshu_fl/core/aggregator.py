@@ -70,7 +70,8 @@ class FedAvgAggregator(Aggregator):
             for job in job_list:
                 job_model_pars, fed_step = self.load_aggregate_model_pars(self.base_model_path + "\\models_{}".format(job.get_job_id()), self.fed_step.get(job.get_job_id()))
                 #print("fed_step: {}, self.fed_step: {}, job_model_pars: {}".format(fed_step, self.fed_step.get(job.get_job_id()), job_model_pars))
-                if self.fed_step.get(job.get_job_id()) != fed_step and job_model_pars is not None:
+                job_fed_step = 0 if self.fed_step.get(job.get_job_id()) is None else self.fed_step.get(job.get_job_id())
+                if job_fed_step != fed_step and job_model_pars is not None:
                     print("execute aggregate ")
                     self._exec(job_model_pars, self.base_model_path, job.get_job_id(), fed_step)
                     self.fed_step[job.get_job_id()] = fed_step
