@@ -6,7 +6,7 @@ from tianshu_fl.utils.utils import return_data_decorator
 
 app = Flask(__name__)
 
-BASE_MODEL_PATH = os.path.abspath(".")+"\\res\\models"
+BASE_MODEL_PATH = os.path.join(os.path.abspath("."), "res", "models")
 
 
 @return_data_decorator

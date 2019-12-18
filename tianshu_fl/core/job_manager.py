@@ -32,18 +32,18 @@ class JobManager(object):
 
         with lock:
             # create model dir of this job
-            job_model_dir = model_path + "\\"+"models_{}".format(job.get_job_id())
+            job_model_dir = os.path.join(model_path, "models_{}".format(job.get_job_id()))
             if not os.path.exists(job_model_dir):
                 os.makedirs(job_model_dir)
-            torch.save(model.state_dict(), job_model_dir+"\\init_model_pars_{}".format(job.get_job_id()))
+            torch.save(model.state_dict(), os.path.join(job_model_dir, "init_model_pars_{}".format(job.get_job_id())))
 
-            init_model_path = job_model_dir+"\\init_model_{}.py".format(job.get_job_id())
+            init_model_path = os.path.join(job_model_dir, "init_model_{}.py".format(job.get_job_id()))
             with open(init_model_path, "w") as model_f:
                 with open(job.get_train_model(), "r") as model_f2:
                     for line in model_f2.readlines():
                         model_f.write(line)
 
-            f = open(self.job_path+"\\"+"job_{}".format(job.get_job_id()), "wb")
+            f = open(os.path.join(self.job_path, "job_{}".format(job.get_job_id())), "wb")
             pickle.dump(job, f)
 
             print("job {} added successfully".format(job.get_job_id()))
@@ -68,7 +68,7 @@ class JobManager(object):
     def get_job_list(job_path):
         job_list = []
         for job_file in os.listdir(job_path):
-            job_file_path = job_path + "\\" + job_file
+            job_file_path = os.path.join(job_path, job_file)
             with open(job_file_path, "rb") as f:
                 job = pickle.load(f)
                 job_list.append(job)

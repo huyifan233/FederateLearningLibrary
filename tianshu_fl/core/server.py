@@ -7,8 +7,8 @@ from tianshu_fl.core.aggregator import FedAvgAggregator
 from tianshu_fl.core.strategy import WorkModeStrategy, FedrateStrategy
 from tianshu_fl.core import communicate_server
 
-JOB_PATH = os.path.abspath(".") + "\\res\\jobs"
-BASE_MODEL_PATH = os.path.abspath(".") + "\\res\\models"
+JOB_PATH = os.path.join(os.path.abspath("."), "res", "jobs")
+BASE_MODEL_PATH = os.path.join(os.path.abspath("."), "res", "models")
 
 class TianshuFlServer():
 

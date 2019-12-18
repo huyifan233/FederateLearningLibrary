@@ -13,7 +13,7 @@ from tianshu_fl.core.strategy import WorkModeStrategy, FedrateStrategy
 from tianshu_fl.core.trainer import TrainStandloneNormalStrategy, TrainMPCNormalStrategy, TrainStandloneDistillationStrategy, TrainMPCDistillationStrategy
 
 
-JOB_PATH = "res\\jobs"
+JOB_PATH = os.path.join(os.path.abspath("."), "res", "jobs")
 
 class TrainerController(object):
     def __init__(self, work_mode, data, client_id, client_ip, client_port, server_url, concurrent_num=5):
@@ -22,7 +22,7 @@ class TrainerController(object):
         self.client_id = client_id
         self.concurrent_num = concurrent_num
         self.trainer_executor_pool = ThreadPoolExecutor(self.concurrent_num)
-        self.job_path = os.path.abspath(".")+"\\"+JOB_PATH
+        self.job_path = JOB_PATH
         self.fed_step = {}
         self.job_iter_dict = {}
         self.is_finish = True
