@@ -45,12 +45,16 @@ class TianshuFlClusterServer(TianshuFlServer):
         self.ip = ip
         self.port = port
         self.api_version = api_version
+        self.federate_strategy = federate_strategy
 
     def start(self):
         self.executor_pool.submit(communicate_server.start_communicate_server, self.api_version, self.ip, self.port)
         #self.executor_pool.submit(self.aggregator.aggregate)
         #communicate_server.start_communicate_server(self.api_version, self.ip, self.port)
-        self.aggregator.aggregate()
+        if self.federate_strategy == FedrateStrategy.FED_AVG:
+            self.aggregator.aggregate()
+        else:
+            pass
 
 
 

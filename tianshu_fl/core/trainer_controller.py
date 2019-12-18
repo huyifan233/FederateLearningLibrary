@@ -34,16 +34,16 @@ class TrainerController(object):
 
     def start(self):
         if self.work_mode == WorkModeStrategy.WORKMODE_STANDALONE:
-            #self.trainer_executor_pool.submit(self._trainer_standalone_exec)
-            self._trainer_standalone_exec()
+            self.trainer_executor_pool.submit(self._trainer_standalone_exec)
+            #self._trainer_standalone_exec()
         else:
             response = requests.post("/".join([self.server_url, "register", self.client_ip, '%s' % self.client_port, '%s' % self.client_id]))
             response_json = response.json()
             if response_json['code'] == 200 or response_json['code'] == 201:
                 #self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
-                self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
+                #self.trainer_executor_pool.submit(self._trainer_mpc_exec, self.server_url)
                 self.trainer_executor_pool.submit(communicate_client.start_communicate_client, self.client_ip, self.client_port)
-                #self._trainer_mpc_exec(self.server_url)
+                self._trainer_mpc_exec(self.server_url)
             else:
                 print("connect to parameter server fail, please check your internet")
 
@@ -78,7 +78,7 @@ class TrainerController(object):
                     if job.get_aggregate_strategy() == FedrateStrategy.FED_AVG:
                         job_train_strategy[job.get_job_id()] = job_train_strategy[job.get_job_id()] = TrainMPCNormalStrategy(job, self.data, self.fed_step, self.client_ip, self.client_port, server_url, self.client_id)
                     else:
-                        job_train_strategy[job.get_job_id()] = TrainMPCDistillationStrategy(job, self.data, self.client_ip, self.client_port, server_url, self.client_id)
+                        job_train_strategy[job.get_job_id()] = TrainMPCDistillationStrategy(job, self.data, self.fed_step, self.client_ip, self.client_port, server_url, self.client_id)
                 self.run(job_train_strategy.get(job.get_job_id()))
             time.sleep(5)
 

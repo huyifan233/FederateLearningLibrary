@@ -26,7 +26,7 @@ class Net(nn.Module):
         x = x.view(-1, 4*4*50)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+        return F.softmax(x, dim=1)
 
     # def p_for_KL(self, x):
     #     x = F.relu(self.conv1(x))
@@ -53,5 +53,5 @@ if __name__ == "__main__":
 
     model = Net()
     job_manager = JobManager(JOB_PATH)
-    job = job_manager.generate_job(strategy.WorkModeStrategy.WORKMODE_STANDALONE, train_code_strategy, Net, 3)
+    job = job_manager.generate_job(strategy.WorkModeStrategy.WORKMODE_CLUSTER, train_code_strategy, strategy.FedrateStrategy.FED_DISTILLATION, Net, 3, 0.5)
     job_manager.submit_job(job, model, MODEL_PATH)

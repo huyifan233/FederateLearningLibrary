@@ -12,7 +12,6 @@ from tianshu_fl.core.job_manager import JobManager
 API_VERSION = "/api/v1"
 JOB_PATH = os.path.abspath(".")+"\\res\\jobs"
 BASE_MODEL_PATH = os.path.abspath(".")+"\\res\\models"
-INIT_MODEL_PARS = "avg_pars_0"
 
 app = Flask(__name__)
 
@@ -64,11 +63,10 @@ def acquire_job_list():
 
 
 @app.route("/modelpars/<job_id>", methods=['GET'], endpoint='acquire_init_model_pars')
-@return_data_decorator
 def acquire_init_model_pars(job_id):
     print(job_id)
-    init_model_pars_dir = BASE_MODEL_PATH+"\\models_{}\\tmp_aggregate_pars".format(job_id)
-    return send_from_directory(init_model_pars_dir, INIT_MODEL_PARS, as_attachment=True)
+    init_model_pars_dir = BASE_MODEL_PATH+"\\models_{}".format(job_id)
+    return send_from_directory(init_model_pars_dir, "init_model_pars_{}".format(job_id), as_attachment=True)
 
 
 
@@ -86,12 +84,35 @@ def submit_model_parameter(client_id, job_id, fed_step):
 
     return 'submit_success', 200
 
+@app.route("/otherparameters/<job_id>/<client_id>/<fed_step>", methods=['GET'], endpoint='get_other_parameters')
+def get_other_parameters(job_id, client_id, fed_step):
+
+    tmp_parameter_dir = BASE_MODEL_PATH + "\\models_{}\\models_{}".format(job_id, client_id)
+    tmp_parameter_path = BASE_MODEL_PATH + "\\models_{}\\models_{}\\tmp_parameters_{}".format(job_id, client_id, fed_step)
+
+    if not os.path.exists(tmp_parameter_path):
+        return 'file not prepared', 201
+    return send_from_directory(tmp_parameter_dir, "tmp_parameters_{}".format(fed_step), as_attachment=True)
+
+
+@app.route("/otherclients/<job_id>", methods=['GET'], endpoint='get_connected_clients')
+@return_data_decorator
+def get_connected_clients(job_id):
+    connected_clients_id = []
+    job_model_path = BASE_MODEL_PATH + "\\models_{}".format(job_id)
+    for model_dir in os.listdir(job_model_path):
+        if model_dir.find("models_") != -1:
+            connected_clients_id.append(int(model_dir.split("_")[-1]))
+
+    return connected_clients_id, 200
 
 
 @app.route("/aggregatepars", methods=['GET'], endpoint='get_aggregate_parameter')
 @return_data_decorator
 def get_aggregate_parameter():
     return ''
+
+
 
 
 

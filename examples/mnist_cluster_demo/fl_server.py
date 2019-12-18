@@ -4,7 +4,7 @@ from tianshu_fl.core.job_detector import JobDetector
 from tianshu_fl.core.strategy import WorkModeStrategy, FedrateStrategy
 
 WORK_MODE = WorkModeStrategy.WORKMODE_CLUSTER
-FEDERATE_STRATEGY = FedrateStrategy.FED_AVG
+FEDERATE_STRATEGY = FedrateStrategy.FED_DISTILLATION
 IP = '0.0.0.0'
 PORT = 9763
 API_VERSION = '/api/version'
