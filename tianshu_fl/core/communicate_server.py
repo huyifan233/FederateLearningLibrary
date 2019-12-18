@@ -1,8 +1,7 @@
 
-import os, pickle, json
+import os, json
 from flask import Flask, send_from_directory, request
 from werkzeug.serving import run_simple
-from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from tianshu_fl.utils.utils import JobEncoder, return_data_decorator
 from tianshu_fl.entity.runtime_config import CONNECTED_TRAINER_LIST
 from tianshu_fl.core.job_manager import JobManager
@@ -92,7 +91,11 @@ def get_other_parameters(job_id, client_id, fed_step):
 
     if not os.path.exists(tmp_parameter_path):
         return 'file not prepared', 201
+
     return send_from_directory(tmp_parameter_dir, "tmp_parameters_{}".format(fed_step), as_attachment=True)
+
+
+
 
 
 @app.route("/otherclients/<job_id>", methods=['GET'], endpoint='get_connected_clients')
@@ -111,10 +114,6 @@ def get_connected_clients(job_id):
 @return_data_decorator
 def get_aggregate_parameter():
     return ''
-
-
-
-
 
 
 def start_communicate_server(api_version, ip, port):

@@ -103,9 +103,6 @@ class TrainNormalStrategy(TrainStrategy):
         pass
 
 
-
-
-
     def _prepare_jobs_model(self, job_list):
         for job in job_list:
             self._prepare_job_model(job)
@@ -137,6 +134,17 @@ class TrainNormalStrategy(TrainStrategy):
             for chunk in response.iter_content(chunk_size=512):
                 if chunk:
                     f.write(chunk)
+
+    def _prepare_upload_client_model_pars(self, job_id, client_id, fed_avg):
+        job_init_model_pars_dir = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH + \
+                                  "models_{}\\models_{}".format(job_id, client_id)
+        tmp_parameter_path = "tmp_parameters_{}".format(fed_avg)
+
+        files = {
+            'tmp_parameter_file': (
+                'tmp_parameter_file', open(job_init_model_pars_dir + "\\" + tmp_parameter_path, "rb"))
+        }
+        return files
 
 
 class TrainDistillationStrategy(TrainNormalStrategy):
@@ -264,19 +272,6 @@ class TrainMPCNormalStrategy(TrainNormalStrategy):
         self.client_ip = client_ip
         self.client_port = client_port
 
-    def _prepare_upload_client_model_pars(self, job_id, client_id, fed_avg):
-        job_init_model_pars_dir = os.path.abspath(".") + "\\" + LOCAL_MODEL_BASE_PATH + \
-                                  "models_{}\\models_{}".format(job_id, client_id)
-        tmp_parameter_path = "tmp_parameters_{}".format(fed_avg)
-
-        files = {
-            'tmp_parameter_file': (
-                'tmp_parameter_file', open(job_init_model_pars_dir + "\\" + tmp_parameter_path, "rb"))
-        }
-        return files
-
-
-
     def train(self):
         while True:
             response = requests.get("/".join([self.server_url, "jobs"]))
@@ -337,7 +332,9 @@ class TrainMPCDistillationStrategy(TrainDistillationStrategy):
                     if response.status_code == 200:
                         self._write_bfile_to_local(response, parameter_path)
                 other_model_pars, _ = self._load_other_models_pars(job.get_job_id(), self.fed_step.get(job.get_job_id()))
-                self._train_with_kl(job_model, other_model_pars, LOCAL_MODEL_BASE_PATH+"models_{}\\models_{}".format(job.get_job_id(), client_id))
-
+                self._train_with_kl(job_model, other_model_pars, LOCAL_MODEL_BASE_PATH+"models_{}\\models_{}".format(job.get_job_id(), self.client_id))
+                files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step.get(job.get_job_id()))
+                response = requests.post("/".join([self.server_url, "modelpars", self.client_id, job.get_job_id(), self.fed_step.get(job.get_job_id())]), data=None, files=files)
+                print(response)
             time.sleep(5)
 
