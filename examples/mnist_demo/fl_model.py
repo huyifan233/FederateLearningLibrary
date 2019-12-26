@@ -5,8 +5,8 @@ import torch.nn.functional as F
 import tianshu_fl.core.strategy as strategy
 from tianshu_fl.core.job_manager import JobManager
 
-JOB_PATH = os.path.abspath(".")+"\\res\\jobs"
-MODEL_PATH = os.path.abspath(".")+"\\res\\models"
+JOB_PATH = os.path.join(os.path.abspath("."), "res", "jobs")
+MODEL_PATH = os.path.join(os.path.abspath("."), "res", "models")
 
 
 class Net(nn.Module):
