@@ -1,6 +1,7 @@
 import torch
-import os
+import os, sys
 from torchvision import datasets, transforms
+sys.path.append("C:\\Users\\tchennech\\Documents\\FederateLearningLibrary")
 from tianshu_fl.core.strategy import WorkModeStrategy
 from tianshu_fl.core.trainer_controller import TrainerController
 from tianshu_fl.core.job_detector import JobDetector
