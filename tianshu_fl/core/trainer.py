@@ -252,16 +252,17 @@ class TrainStandloneDistillationStrategy(TrainDistillationStrategy):
         if is_sync:
             print("execute model distillation")
             self._train_with_kl(job_model, other_model_pars,  os.path.join(LOCAL_MODEL_BASE_PATH, "models_{}".format(self.job.get_job_id())))
+            self.job_iter_dict[self.job.get_job_id()] = fed_step
             print("model distillation success")
             return
-        if self.job.get_job_id() not in runtime_config.EXEC_JOB_LIST:
-            if aggregate_file is not None:
-                print("load {} parameters".format(aggregate_file))
-                job_model.load_state_dict(torch.load(aggregate_file))
-            print("job_{} is start training".format(self.job.get_job_id()))
-            runtime_config.EXEC_JOB_LIST.append(self.job.get_job_id())
-            self._train(job_model, job_models_path)
-            self.job_iter_dict[self.job.get_job_id()] = fed_step
+        # if self.job.get_job_id() not in runtime_config.EXEC_JOB_LIST:
+        #     if aggregate_file is not None:
+        #         print("load {} parameters".format(aggregate_file))
+        #         job_model.load_state_dict(torch.load(aggregate_file))
+        #     print("job_{} is start training".format(self.job.get_job_id()))
+        #     runtime_config.EXEC_JOB_LIST.append(self.job.get_job_id())
+        #     self._train(job_model, job_models_path)
+
 
 
 class TrainMPCNormalStrategy(TrainNormalStrategy):
