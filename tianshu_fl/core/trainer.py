@@ -77,6 +77,9 @@ class TrainNormalStrategy(TrainStrategy):
         self.job_model_path = os.path.join(os.path.abspath("."), "models_{}".format(job.get_job_id()))
         self.fed_step = fed_step
 
+    def train(self):
+        pass
+
 
     def _train(self, train_model, job_models_path):
         train_strategy = self.job.get_train_strategy()
@@ -165,10 +168,23 @@ class TrainDistillationStrategy(TrainNormalStrategy):
                     other_models_pars.append(torch.load(os.path.join(job_model_base_path, f, files[-1])))
         return other_models_pars, True
 
+
+    def _save_final_parameters(self, job_id, final_pars_path):
+        file_path = os.path.join(os.path.abspath("."), "final_model_pars_{}".format(job_id))
+        if os.path.exists(file_path):
+            return
+        with open(file_path, "wb") as w_f:
+            with open(final_pars_path, "rb") as r_f:
+                for line in r_f.readlines():
+                    w_f.write(line)
+
+
     def _calc_rate(self, received, total):
         if total == 0:
             return 0
         return received / total
+
+
 
 
     def _train_with_kl(self, train_model, other_models_pars, job_models_path):
@@ -260,7 +276,6 @@ class TrainStandloneDistillationStrategy(TrainDistillationStrategy):
             self._train_with_kl(job_model, other_model_pars,  os.path.join(LOCAL_MODEL_BASE_PATH, "models_{}".format(self.job.get_job_id())))
             self.job_iter_dict[self.job.get_job_id()] = fed_step
             print("model distillation success")
-            return
         # if self.job.get_job_id() not in runtime_config.EXEC_JOB_LIST:
         #     if aggregate_file is not None:
         #         print("load {} parameters".format(aggregate_file))
@@ -323,6 +338,11 @@ class TrainMPCDistillationStrategy(TrainDistillationStrategy):
 
             for job_str in job_list_str:
                 job = json.loads(job_str, cls=JobDecoder)
+                if self.fed_step.get(job.get_job_id()) is not None and self.fed_step.get(job.get_job_id()) >= job.get_iterations():
+                    final_pars_path = os.path.join(self.job_model_path, "models_{}".format(self.client_id), "tmp_parameters_{}".format(self.fed_step.get(job.get_job_id())))
+                    if not os.path.exists(final_pars_path):
+                        self._save_final_parameters(job.get_job_id(), final_pars_path)
+                    continue
                 self._prepare_job_model(job)
                 self._prepare_job_init_model_pars(job, self.server_url)
                 job_model = self._load_job_model(job.get_job_id(), job.get_train_model_class_name())
@@ -339,16 +359,20 @@ class TrainMPCDistillationStrategy(TrainDistillationStrategy):
                         self._write_bfile_to_local(response, parameter_path)
                 other_model_pars, _ = self._load_other_models_pars(job.get_job_id(), self.fed_step.get(job.get_job_id()))
                 if other_model_pars is not None and self._calc_rate(len(other_model_pars), len(connected_clients_id)) >= THRESHOLD:
-                    print("model distillation started")
+                    print("execute model distillation")
                     self._train_with_kl(job_model, other_model_pars, os.path.join(LOCAL_MODEL_BASE_PATH, "models_{}".format(job.get_job_id()), "models_{}".format(self.client_id)))
                     print("model distillation success")
+                    self.fed_step[job.get_job_id()] = self.fed_step.get(job.get_job_id()) + 1
                     files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step.get(job.get_job_id()))
                     response = requests.post("/".join([self.server_url, "modelpars", "%s" % self.client_id, job.get_job_id(), "%s" % self.fed_step.get(job.get_job_id())]), data=None, files=files)
-                    print(response)
-                    self.fed_step[job.get_job_id()] = self.fed_step.get(job.get_job_id()) + 1
                 else:
                     job_model_client_path = os.path.join(LOCAL_MODEL_BASE_PATH, "models_{}".format(job.get_job_id()), "models_{}".format(self.client_id))
                     self._train(job_model, job_model_client_path)
+                    files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id,
+                                                                   self.fed_step.get(job.get_job_id()))
+                    response = requests.post("/".join(
+                        [self.server_url, "modelpars", "%s" % self.client_id, job.get_job_id(),
+                         "%s" % self.fed_step.get(job.get_job_id())]), data=None, files=files)
 
             time.sleep(5)
 
