@@ -1,22 +1,22 @@
 
 #federate strategies
-
+from enum import Enum
 import tianshu_fl.exceptions.fl_expection as exceptions
 
 
-class WorkModeStrategy(object):
+class WorkModeStrategy(Enum):
     WORKMODE_STANDALONE = "standalone"
     WORKMODE_CLUSTER = "cluster"
 
 
 
-class FedrateStrategy(object):
+class FedrateStrategy(Enum):
     FED_AVG = "fed_avg"
     FED_DISTILLATION = "fed_distillation"
 
 
 
-class RunTimeStrategy(object) :
+class RunTimeStrategy(Enum) :
     L1_LOSS = "L1loss"
     MSE_LOSS = "MSELoss"
     CROSSENTROPY_LOSS = "CrossEntropyLoss"
