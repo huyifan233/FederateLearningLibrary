@@ -15,6 +15,7 @@ from tianshu_fl.entity.job import Job
 JOB_PATH = os.path.join(os.path.abspath("."), "res", "jobs")
 LOCAL_MODEL_BASE_PATH = os.path.join(os.path.abspath("."), "res", "models")
 AGGREGATE_PATH = "tmp_aggregate_pars"
+THRESHOLD = 0.5
 
 
 class TrainStrategy(object):
@@ -164,6 +165,11 @@ class TrainDistillationStrategy(TrainNormalStrategy):
                     other_models_pars.append(torch.load(os.path.join(job_model_base_path, f, files[-1])))
         return other_models_pars, True
 
+    def _calc_rate(self, received, total):
+        if total == 0:
+            return 0
+        return received / total
+
 
     def _train_with_kl(self, train_model, other_models_pars, job_models_path):
         train_strategy = self.job.get_train_strategy()
@@ -196,7 +202,7 @@ class TrainDistillationStrategy(TrainNormalStrategy):
             if idx % 200 == 0:
                 print("loss: ", loss.item())
 
-        torch.save(train_model.state_dict(), os.path.join(job_models_path, "tmp_parameters_{}".format(self.fed_step[self.job.get_job_id()])))
+        torch.save(train_model.state_dict(), os.path.join(job_models_path, "tmp_parameters_{}".format(self.fed_step[self.job.get_job_id()] + 1)))
 
 class TrainStandloneNormalStrategy(TrainNormalStrategy):
     def __init__(self, job, data, fed_step, client_id):
@@ -332,9 +338,17 @@ class TrainMPCDistillationStrategy(TrainDistillationStrategy):
                     if response.status_code == 200:
                         self._write_bfile_to_local(response, parameter_path)
                 other_model_pars, _ = self._load_other_models_pars(job.get_job_id(), self.fed_step.get(job.get_job_id()))
-                self._train_with_kl(job_model, other_model_pars, os.path.join(LOCAL_MODEL_BASE_PATH, "models_{}".format(job.get_job_id()), "models_{}".format(self.client_id)))
-                files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step.get(job.get_job_id()))
-                response = requests.post("/".join([self.server_url, "modelpars", self.client_id, job.get_job_id(), self.fed_step.get(job.get_job_id())]), data=None, files=files)
-                print(response)
+                if other_model_pars is not None and self._calc_rate(len(other_model_pars), len(connected_clients_id)) >= THRESHOLD:
+                    print("model distillation started")
+                    self._train_with_kl(job_model, other_model_pars, os.path.join(LOCAL_MODEL_BASE_PATH, "models_{}".format(job.get_job_id()), "models_{}".format(self.client_id)))
+                    print("model distillation success")
+                    files = self._prepare_upload_client_model_pars(job.get_job_id(), self.client_id, self.fed_step.get(job.get_job_id()))
+                    response = requests.post("/".join([self.server_url, "modelpars", "%s" % self.client_id, job.get_job_id(), "%s" % self.fed_step.get(job.get_job_id())]), data=None, files=files)
+                    print(response)
+                    self.fed_step[job.get_job_id()] = self.fed_step.get(job.get_job_id()) + 1
+                else:
+                    job_model_client_path = os.path.join(LOCAL_MODEL_BASE_PATH, "models_{}".format(job.get_job_id()), "models_{}".format(self.client_id))
+                    self._train(job_model, job_model_client_path)
+
             time.sleep(5)
 
