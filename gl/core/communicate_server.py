@@ -2,9 +2,9 @@
 import os, json
 from flask import Flask, send_from_directory, request
 from werkzeug.serving import run_simple
-from tianshu_fl.utils.utils import JobEncoder, return_data_decorator
-from tianshu_fl.entity.runtime_config import CONNECTED_TRAINER_LIST
-from tianshu_fl.core.job_manager import JobManager
+from gl.utils.utils import JobEncoder, return_data_decorator
+from gl.entity.runtime_config import CONNECTED_TRAINER_LIST
+from gl.core.job_manager import JobManager
 
 
 

@@ -1,7 +1,7 @@
 
 #federate strategies
 from enum import Enum
-import tianshu_fl.exceptions.fl_expection as exceptions
+import gl.exceptions.fl_expection as exceptions
 
 
 class WorkModeStrategy(Enum):

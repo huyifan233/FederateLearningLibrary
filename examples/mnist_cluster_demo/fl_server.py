@@ -1,7 +1,7 @@
 
-from tianshu_fl.core.server import TianshuFlStandaloneServer, TianshuFlClusterServer
-from tianshu_fl.core.job_detector import JobDetector
-from tianshu_fl.core.strategy import WorkModeStrategy, FedrateStrategy
+from gl.core.server import TianshuFlStandaloneServer, TianshuFlClusterServer
+from gl.core.job_detector import JobDetector
+from gl.core.strategy import WorkModeStrategy, FedrateStrategy
 
 WORK_MODE = WorkModeStrategy.WORKMODE_CLUSTER
 FEDERATE_STRATEGY = FedrateStrategy.FED_DISTILLATION

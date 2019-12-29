@@ -5,8 +5,8 @@ import json
 import os
 from json.decoder import WHITESPACE
 
-from tianshu_fl.entity.job import Job
-from tianshu_fl.core.strategy import TrainStrategyFatorcy
+from gl.entity.job import Job
+from gl.core.strategy import TrainStrategyFatorcy
 
 class JobIdCount(object):
 

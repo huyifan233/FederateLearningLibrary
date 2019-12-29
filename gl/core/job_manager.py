@@ -3,10 +3,10 @@ import threading
 import pickle
 import os, json
 import inspect
-from tianshu_fl.entity import runtime_config
-from tianshu_fl.entity.job import Job
-from tianshu_fl.utils.utils import JobUtils
-from tianshu_fl.core.strategy import WorkModeStrategy
+from gl.entity import runtime_config
+from gl.entity.job import Job
+from gl.utils.utils import JobUtils
+from gl.core.strategy import WorkModeStrategy
 
 lock = threading.RLock()
 

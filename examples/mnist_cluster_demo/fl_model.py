@@ -2,8 +2,8 @@ import os, sys
 from torch import nn
 import torch.nn.functional as F
 sys.path.append("C:\\Users\\tchennech\\Documents\\FederateLearningLibrary")
-import tianshu_fl.core.strategy as strategy
-from tianshu_fl.core.job_manager import JobManager
+import gl.core.strategy as strategy
+from gl.core.job_manager import JobManager
 
 JOB_PATH = os.path.join(os.path.abspath("."), "res", "jobs")
 MODEL_PATH = os.path.join(os.path.abspath("."), "res", "models")

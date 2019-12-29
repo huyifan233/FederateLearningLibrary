@@ -4,12 +4,12 @@ import torch.nn.functional as F
 import time, os, pickle, requests, importlib, shutil, copy
 from flask import url_for
 from concurrent.futures import ThreadPoolExecutor
-from tianshu_fl.core.strategy import WorkModeStrategy
-from tianshu_fl.entity import runtime_config
-from tianshu_fl.core.strategy import RunTimeStrategy
-from tianshu_fl.core import communicate_client
-from tianshu_fl.utils.utils import JobDecoder
-from tianshu_fl.entity.job import Job
+from gl.core.strategy import WorkModeStrategy
+from gl.entity import runtime_config
+from gl.core.strategy import RunTimeStrategy
+from gl.core import communicate_client
+from gl.utils.utils import JobDecoder
+from gl.entity.job import Job
 
 
 JOB_PATH = os.path.join(os.path.abspath("."), "res", "jobs")
